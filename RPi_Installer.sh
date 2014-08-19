@@ -25,6 +25,7 @@ GIT=https://github.com/Weaved/Core
 WEAVED_DIR=/etc/weaved
 BIN_DIR=/usr/bin
 DAEMON=connectd
+NOTIFIER=notify.sh
 INIT_DIR=/etc/init.d
 
 # Get connectd.conf file for the device project
@@ -47,10 +48,12 @@ cd $TMP
 git clone $GIT
 sudo cp $TMP/Core/binaries/$DAEMON.pi $BIN_DIR/$DAEMON
 sudo cp $TMP/Core/startup_scripts/$DAEMON.init $INIT_DIR/$DAEMON
+sudo cp $TMP/Core/notification/$NOTIFIER $BIN_DIR
 
 # Make files executable
 sudo chmod +x $BIN_DIR/$DAEMON
 sudo chmod +x $INIT_DIR/$DAEMON
+sudo chmod +x $BIN_DIR/$NOTIFIER
 
 # Startup the connectd daemon
 sudo /etc/init.d/connectd start
