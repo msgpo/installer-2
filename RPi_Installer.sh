@@ -6,6 +6,15 @@
 #  Created by Mike Young on 8/17/14.
 #
 
+filename=RPi_Installer.sh
+
+if [ "$BASH_VERSION" = '' ]; then
+    printf "You executed this script with dash vs bash. \n"
+    printf "Please re-run using \"./$filename\" or as \"bash $filename\". \n"
+    exit
+else
+    echo "This is bash."
+fi
 clear
 
 ######### Begin Portal Login #########
@@ -15,7 +24,7 @@ printf "Please enter your Weaved Portal Username (email address): \n"
 read username
 
 printf "\nNow, please enter your password: \n"
-read  password
+read  -s password
 
 loginURL=https://api.weaved.com/v3/api/user/login/$username/$password
 projectsURL=https://api.weaved.com/v3/api/project/list/all
@@ -61,22 +70,26 @@ projectSelection ()
 {
 clear
 printf "Please select the project from the following list, which you'd like to install: \n\n"
+
 for i in $(seq 1 $projectNumber); do
-printf "$i\t $(awk "NR==$i" .projectNames)%-5s\t $(awk "NR==$i" .projectVersions)\t $(awk "NR==$i" .projectKeys)\t\n";
+    printf "$i\t $(awk "NR==$i" .projectNames)%-5s\t $(awk "NR==$i" .projectVersions)\t $(awk "NR==$i" .projectKeys)\t\n";
 done
 read select
 }
+
 if [ "$projectNumber" == 0 ]; then
-printf "You have not yet created any projects. Please visit our portal at http://developer.weaved.com and create a project. \n"
-printf "Thank you!"
-exit
+    printf "You have not yet created any projects. Please visit our portal at http://developer.weaved.com and create a project. \n"
+    printf "Thank you!"
+    exit
 else
-projectSelection
+    projectSelection
 fi
+
 while (( "$select" < 0 || "$select" > "$projectNumber" )); do
-printf "Please make a valid selection from the list above: \n"
-projectSelection
+    printf "Please make a valid selection from the list above: \n"
+    projectSelection
 done
+
 projectInstall=$(awk "NR==$select" .projectKeys)
 printf "\nYou selected number $select, with the following project key: $projectInstall \n\n"
 
@@ -111,7 +124,7 @@ INIT_DIR=/etc/init.d
 printf "\n***** We are now installing Weaved's connectd daemon for your project... ***** \n\n"
 
 if [ ! -d "WEAVED_DIR" ]; then
-sudo mkdir $WEAVED_DIR
+    sudo mkdir $WEAVED_DIR
 fi
 sudo wget http://apiaws.yoics.net/v3/portal/members/downloadHandler.php?id=$projectInstall -O $WEAVED_DIR/connectd.conf
 
