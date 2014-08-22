@@ -21,9 +21,9 @@ loginURL=https://api.weaved.com/v3/api/user/login/$username/$password
 projectsURL=https://api.weaved.com/v3/api/project/list/all
 
 resp=$(curl -s -S -X GET \
--H "content-type:application/json" \
--H "apikey:WeavedDeveloperToolsWy98ayxR" \
-"$loginURL")
+    -H "content-type:application/json" \
+    -H "apikey:WeavedDeveloperToolsWy98ayxR" \
+    "$loginURL")
 
 loginFailed=$(echo "$resp" | grep "login failed" | sed 's/"//g')
 }
@@ -31,10 +31,9 @@ userLogin
 
 # Retry if failed login
 while [ "$loginFailed" != "" ]; do
-clear
-echo "You have entered either an incorrect username or password. Please try again. "
-userLogin
-
+    clear
+    printf "You have entered either an incorrect username or password. Please try again. \n\n"
+    userLogin
 done
 ######### End Portal Login #########
 
