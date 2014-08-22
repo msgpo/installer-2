@@ -20,7 +20,7 @@ read -s password
 loginURL=https://api.weaved.com/v3/api/user/login/$username/$password
 projectsURL=https://api.weaved.com/v3/api/project/list/all
 
-resp=$(curl -k -s -S -X GET \
+resp=$(curl -s -S -X GET \
 -H "content-type:application/json" \
 -H "apikey:WeavedDeveloperToolsWy98ayxR" \
 "$loginURL")
@@ -40,7 +40,7 @@ done
 
 ######### Begin Get Project List #########
 token=$(echo "$resp" | awk -F ":" '{print $3}' | awk -F "," '{print $1}' | sed -e 's/^"//'  -e 's/"$//')
-projectsStream=$(curl -k -s -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" "$projectsURL")
+projectsStream=$(curl -s -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" "$projectsURL")
 
 # Project Keys
 projectKeys=$(echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep id | awk -F ":" '{print $2}' | sed 's/"//g')
