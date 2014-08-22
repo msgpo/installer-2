@@ -15,7 +15,7 @@ printf "Please enter your Weaved Portal Username (email address): \n"
 read username
 
 printf "\nNow, please enter your password: \n"
-read -s password
+read  password
 
 loginURL=https://api.weaved.com/v3/api/user/login/$username/$password
 projectsURL=https://api.weaved.com/v3/api/project/list/all
