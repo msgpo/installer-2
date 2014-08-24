@@ -13,7 +13,8 @@ if [ "$BASH_VERSION" = '' ]; then
     printf "Please re-run using \"./$filename\" or as \"bash $filename\". \n"
     exit
 else
-    echo "This is bash."
+    clear
+    echo "Now launching the Weaved connectd daemon installer..."
 fi
 clear
 
