@@ -144,6 +144,9 @@ sudo chmod +x $BIN_DIR/$DAEMON
 sudo chmod +x $INIT_DIR/$DAEMON
 sudo chmod +x $BIN_DIR/$NOTIFIER
 
+# Add startup levels
+sudo update-rc.d connectd defaults
+
 # Startup the connectd daemon
 printf "\n\n"
 printf "*** Installation of Weaved's connectd daemon has completed \n"
