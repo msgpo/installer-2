@@ -118,16 +118,16 @@ TMP=~/.weaved
 GIT=https://github.com/Weaved/Core
 WEAVED_DIR=/etc/weaved
 BIN_DIR=/usr/bin
-DAEMON=connectd
+DAEMON=weavedConnectd
 NOTIFIER=notify.sh
 INIT_DIR=/etc/init.d
 
 printf "\n***** We are now installing Weaved's connectd daemon for your project... ***** \n\n"
 
 if [ ! -d "WEAVED_DIR" ]; then
-    sudo mkdir $WEAVED_DIR
+    sudo mkdir -p $WEAVED_DIR/services
 fi
-sudo wget http://apiaws.yoics.net/v3/portal/members/downloadHandler.php?id=$projectInstall -O $WEAVED_DIR/connectd.conf
+sudo wget http://apiaws.yoics.net/v3/portal/members/downloadHandler.php?id=$projectInstall -O $WEAVED_DIR/services/http.conf
 
 # Retrieve latest Weaved software from GitHub and install into proper locations
 if [ ! -d "$TMP" ]; then
@@ -145,7 +145,7 @@ sudo chmod +x $INIT_DIR/$DAEMON
 sudo chmod +x $BIN_DIR/$NOTIFIER
 
 # Add startup levels
-sudo update-rc.d connectd defaults
+sudo update-rc.d $DAEMON defaults
 
 # Startup the connectd daemon
 printf "\n\n"
@@ -154,7 +154,7 @@ printf "*** and we are now starting the service. Please be sure to \n"
 printf "*** register your device. \n\n"
 printf "Now starting the Weaved connectd daemon..."
 printf "\n\n"
-sudo /etc/init.d/connectd start
+sudo /etc/init.d/$DAEMON start
 printf "\n"
 
 # Remove Git download
