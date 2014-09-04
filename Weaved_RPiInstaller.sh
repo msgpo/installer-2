@@ -167,5 +167,6 @@ sudo /etc/init.d/$DAEMON start
 printf "\n"
 
 # Remove Git download
+cp ~/.weaved/Core/binaries/weaved_web_install.tar.gz ~/.
 rm -rf ~/.weaved
 ######### End project installation of weaved daemon #########
