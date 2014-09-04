@@ -17,4 +17,6 @@ for i in $stop; do
   sudo rm -f /etc/rc$i.d/K01weavedConnectd
 done
 
+sudo rm -f ~/weaved_iot_kit_installer.tar.gz
+
 printf "\n\n"
