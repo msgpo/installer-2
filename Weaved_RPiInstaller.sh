@@ -145,7 +145,16 @@ sudo chmod +x $INIT_DIR/$DAEMON
 sudo chmod +x $BIN_DIR/$NOTIFIER
 
 # Add startup levels
-sudo update-rc.d $DAEMON defaults
+#sudo update-rc.d $DAEMON defaults
+start="2 3 4 5"
+for i in $start; do
+  ln -sf $INIT_DIR/$DAEMON /etc/rc$i.d/S20$DAEMON
+done
+
+stop="0 1 6"
+for i in $stop; do
+  ln -sf $INIT_DIR/$DAEMON /etc/rc$i.d/K01$DAEMON
+done
 
 # Startup the connectd daemon
 printf "\n\n"
