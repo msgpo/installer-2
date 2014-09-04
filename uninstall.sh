@@ -6,4 +6,15 @@ sudo rm -r /usr/bin/weavedConnectd
 sudo rm -r /usr/bin/notify.sh
 sudo rm -rf ~/.weaved
 sudo rm /etc/init.d/weavedConnectd
+
+start="2 3 4 5"
+for i in $start; do
+  sudo rm -f /etc/rc$i.d/S20weavedConnectd
+done
+
+stop="0 1 6"
+for i in $stop; do
+  sudo rm -f /etc/rc$i.d/K01weavedConnectd
+done
+
 printf "\n\n"
