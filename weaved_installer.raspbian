@@ -136,7 +136,7 @@ fi
 cd $TMP
 git clone $GIT
 sudo cp $TMP/Core/binaries/$DAEMON.pi $BIN_DIR/$DAEMON
-sudo cp $TMP/Core/startup_scripts/$DAEMON.init $INIT_DIR/$DAEMON
+sudo cp $TMP/Core/startup_scripts/$DAEMON.raspbian $INIT_DIR/$DAEMON
 sudo cp $TMP/Core/notification/$NOTIFIER $BIN_DIR
 
 # Make files executable
@@ -145,7 +145,12 @@ sudo chmod +x $INIT_DIR/$DAEMON
 sudo chmod +x $BIN_DIR/$NOTIFIER
 
 # Add startup levels
-#sudo update-rc.d $DAEMON defaults
+sudo update-rc.d $DAEMON defaults
+levels="0 1 2 3 4 5 6"
+for level in $levels; do
+  sudo rm -f /etc/rc$level.d/*$DAEMON
+done
+
 start="2 3 4 5"
 for i in $start; do
   sudo ln -sf $INIT_DIR/$DAEMON /etc/rc$i.d/S20$DAEMON
