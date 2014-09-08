@@ -17,6 +17,20 @@ else
     echo "Now launching the Weaved connectd daemon installer..."
 fi
 clear
+if [ -d "/etc/weaved/services" ]; then
+  printf "It looks as if there's a previous version of Weaved's Connectd service installed. Would you like to uninstall it? [Y/N]: \n"
+  read choice
+
+  if [ `echo $choice | tr [:upper:] [:lower:]` = `echo "Y" | tr [:upper:] [:lower:]` ]; then
+    printf "\nUninstalling prior installation of Weaved's Connectd service... \n"
+    wget https://raw.githubusercontent.com/weaved/installer/master/uninstall.sh
+    chmod +x uninstall.sh
+    ./uninstall.sh
+    rm -f ./uninstall.sh
+    printf "Prior installation now removed. Now proceeding with new installation... \n"
+  fi
+fi
+
 
 ######### Begin Portal Login #########
 userLogin () #Portal login function
@@ -116,13 +130,14 @@ ERR_INSTALL=7
 ERR_CONFIG=8
 TMP=~/.weaved
 GIT=https://github.com/Weaved/Core
+GIT_IOT_KIT_INSTALLER=https://github.com/weaved/installer
 WEAVED_DIR=/etc/weaved
 BIN_DIR=/usr/bin
 DAEMON=weavedConnectd
 NOTIFIER=notify.sh
 INIT_DIR=/etc/init.d
 
-printf "\n***** We are now installing Weaved's connectd daemon for your project... ***** \n\n"
+printf "\n***** We are now installing Weaved's weavedConnectd daemon for your project... ***** \n\n"
 
 if [ ! -d "WEAVED_DIR" ]; then
     sudo mkdir -p $WEAVED_DIR/services
@@ -163,19 +178,46 @@ done
 
 # Startup the connectd daemon
 printf "\n\n"
-printf "*** Installation of Weaved's connectd daemon has completed \n"
+printf "*** Installation of Weaved's Connectd daemon has completed \n"
 printf "*** and we are now starting the service. Please be sure to \n"
 printf "*** register your device. \n\n"
-printf "Now starting the Weaved connectd daemon..."
+printf "Now starting the weavedConnectd daemon..."
 printf "\n\n"
 sudo /etc/init.d/$DAEMON start
-printf "\n"
+printf "\n\n"
 
-# Remove Git download
+#Git Weaved IoT Web Kit installer download & install
+
+printf "The Weaved IoT Web Kit is a quick way to verify that your Weaved services are properly installed and working. \n\n"
 printf "Would you like to download the Weaved IoT Web Kit? (Y/N) "
 read choice
-if [ `echo $choice | tr [:upper:] [:lower:]` = `echo "Y" | tr [:upper:] [:lower:]` ]; then 
-  cp ~/.weaved/Core/binaries/weaved_iot_kit_installer.tar.gz ~/.
+if [ `echo $choice | tr [:upper:] [:lower:]` = `echo "Y" | tr [:upper:] [:lower:]` ]; then
+  cd $TMP
+  git clone $GIT_IOT_KIT_INSTALLER
+  printf "You have successfully downloaded the Weaved IoT Web Kit. It is called \"weaved_iot_kit_installer.tar.gz\". \n"
 fi
+
+if [ -s $TMP/installer/binaries/weaved_iot_kit_installer.tar.gz ]
+then 
+  printf "\n\n"
+  printf "*** If your Pi does not have a web app or web package and you want\n"
+  printf "*** to test Weaved services, please Install Weaved Web IoT kit.\n\n"
+  printf "*** It may take up to 20 minutes to complete. \n"
+  printf "\n\n"
+  printf "Do you want to Install Weaved Web IoT Kit? (Y/N): "
+  read choice
+fi
+
+if [ `echo $choice | tr [:upper:] [:lower:]` = `echo "Y" | tr [:upper:] [:lower:]` ]; then 
+  printf "\nInstalling Weaved Web IoT Kit....\n"
+  cd $TMP/installer/binaries
+  tar -xvzf ./weaved_iot_kit_installer.tar.gz
+  printf "\n"
+  cd weaved_iot_kit
+  ./weaved_iot_kit_install.sh
+  printf "\nThank you for installing the Weaved IoT Kit. We value your feedback at forum@weaved.com. \n"
+fi
+	
+cd ~
 rm -rf ~/.weaved
 ######### End project installation of weaved daemon #########
