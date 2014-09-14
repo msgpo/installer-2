@@ -31,7 +31,7 @@ INIT_DIR=/etc/init.d
 filename=$(basename $0)
 loginURL=https://api.weaved.com/v4/api/user/login
 projectsURL=https://api.weaved.com/v4/api/project/list/all
-membersURL=https://api.weaved.com/v3/portal/members
+membersURL=https://api.weaved.com/v4/portal/members
 unregdevicelistURL=https://api.weaved.com/v4/api/device/list/unregistered
 regdeviceURL=https://api.weaved.com/v4/api/device/register
 ##### End Settings #####
@@ -269,11 +269,30 @@ checkDaemon()
 ######### End Check Running Service #########
 
 ######### Register Device #########
-checkforDevice()
+registerDevice()
 {
     unregdeviceStream=$(curl -s -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" "$unregdevicelistURL")
-    echo $unregdeviceStream
-    #echo $unregdeviceStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep fulladdress | sed 's/"//g' | awk -F "fulladdress" '{print $2}'  | cut -c 2- > .unregdevList
+    echo $unregdeviceStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep fulladdress | sed 's/"//g' | awk -F "fulladdress" '{print $2}'  | cut -c 2- > .unregdevList
+    uid=$(awk "NR==1" .unregdevList)
+    deviceCheck=$(cat .unregdevList | grep "No devices available")
+    if [ "$deviceCheck" != "" ]; then
+        clear
+        printf "Something went wrong and your device is not showing in the portal. \n"
+        printf "We're exiting the installer. Please go to https://forum.weaved.com for help. \n"
+        exit
+    else
+        clear
+        printf "We will now register your device with the Weaved backend services. \n"
+        printf "Please provide an alias for your device: \n"
+        read alias
+        if [ "$alias" != "" ]; then
+            printf "Your device with UID of $uid is now being provisioned... \n"
+            curl -s -i -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" -d "{\"deviceaddress\": \""$uid"\", \"devicealias\": \""$alias"\" }" $regdeviceURL
+            printf "\n\n\n"
+        else
+            registerDevice
+        fi
+    fi
 }
 
 ######### End Register Device #########
@@ -283,32 +302,30 @@ installWebKit()
 {
     #Git Weaved IoT Web Kit installer download & install
     printf "The Weaved IoT Web Kit is a quick way to verify that your Weaved services are properly installed and working. \n\n"
-    printf "Would you like to download the Weaved IoT Web Kit? (Y/N) "
-    read choice
-    if [ `echo $choice | tr [:upper:] [:lower:]` = `echo "Y" | tr [:upper:] [:lower:]` ]; then
+#   printf "Would you like to download the Weaved IoT Web Kit? (Y/N) "
+#    read choice
+#    if [ `echo $choice | tr [:upper:] [:lower:]` = `echo "Y" | tr [:upper:] [:lower:]` ]; then
+    if ask "Would you like to download the Weaved IoT Web Kit?"; then
         cd $TMP
         git clone $GIT_IOT_KIT_INSTALLER
         printf "You have successfully downloaded the Weaved IoT Web Kit. It is called \"weaved_iot_kit_installer.tar.gz\". \n"
-    fi
-
-    if [ -s $TMP/installer/binaries/weaved_iot_kit_installer.tar.gz ]; then
-        printf "\n\n"
-        printf "*** If your Pi does not have a web app or web package and you want\n"
-        printf "*** to test Weaved services, please Install Weaved Web IoT kit.\n\n"
-        printf "*** It may take up to 20 minutes to complete. \n"
-        printf "\n\n"
-        printf "Do you want to Install Weaved Web IoT Kit? (Y/N): "
-        read choice
-    fi
-
-    if [ `echo $choice | tr [:upper:] [:lower:]` = `echo "Y" | tr [:upper:] [:lower:]` ]; then
-        printf "\nInstalling Weaved Web IoT Kit....\n"
-        cd $TMP/installer/binaries
-        tar -xvzf ./weaved_iot_kit_installer.tar.gz
-        printf "\n"
-        cd weaved_iot_kit
-        ./weaved_iot_kit_install.sh
-        printf "\nThank you for installing the Weaved IoT Kit. We value your feedback at forum@weaved.com. \n"
+        if [ -s $TMP/installer/binaries/weaved_iot_kit_installer.tar.gz ]; then
+            printf "\n\n"
+            printf "*** If your Pi does not have a web app or web package and you want\n"
+            printf "*** to test Weaved services, please Install Weaved Web IoT kit.\n\n"
+            printf "*** It may take up to 20 minutes to complete. \n"
+            printf "\n\n"
+            if ask "Do you want to Install Weaved Web IoT Kit?"; then
+                read choice
+                printf "\nInstalling Weaved Web IoT Kit....\n"
+                cd $TMP/installer/binaries
+                tar -xvzf ./weaved_iot_kit_installer.tar.gz
+                printf "\n"
+                cd weaved_iot_kit
+                ./weaved_iot_kit_install.sh
+                printf "\nThank you for installing the Weaved IoT Kit. We value your feedback at https://forum.weaved.com. \n"
+            fi
+        fi
     fi
 }
 ######### End Weaved IoT Web Kit Install #########
@@ -324,19 +341,20 @@ cleanUp()
 ######### Main Program #########
 main()
 {
-#    clear
-#   bashCheck
-#    checkForPriorInstalls
+    clear
+    bashCheck
+    checkForPriorInstalls
     userLogin
     testLogin
-#    getProject
-#    projectSelection
-#    checkforValidProject
-#    installProject
-#    installWeavedConnectd
-#    checkDaemon
-    checkforDevice
-#    cleanUp
+    getProject
+    projectSelection
+    checkforValidProject
+    installProject
+    installWeavedConnectd
+    checkDaemon
+    registerDevice
+    installWebKit
+    cleanUp
     exit
 }
 ######### End Main Program #########
