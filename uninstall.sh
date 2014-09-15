@@ -6,6 +6,7 @@ sudo rm -r /usr/bin/weavedConnectd
 sudo rm -r /usr/bin/notify.sh
 sudo rm -rf ~/.weaved
 sudo rm /etc/init.d/weavedConnectd
+sudo rm /var/run/weavedConnectd.pid
 
 start="2 3 4 5"
 for i in $start; do
