@@ -287,7 +287,7 @@ registerDevice()
         read alias
         if [ "$alias" != "" ]; then
             printf "Your device with UID of $uid is now being provisioned... \n"
-            curl -s -i -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" -d "{\"deviceaddress\": \""$uid"\", \"devicealias\": \""$alias"\" }" $regdeviceURL
+            curl -s -i -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" -d "{\"deviceaddress\": \"$uid\", \"devicealias\": \"$alias\" }" $regdeviceURL
             printf "\n\n\n"
         else
             registerDevice
@@ -338,6 +338,59 @@ cleanUp()
 }
 ######### End Cleanup #########
 
+######### Menu #########
+menu()
+{
+clear
+printf "Welcome to the Weaved Installer for Raspberry Pi \n\n"
+printf "WeavedConnectd is the service level VPN software neccessary \n"
+printf "for obtaining remote access to your device. \n\n"
+printf "The Weaved IoT Web Kit is additional software that will allow \n"
+printf "you to quickly connect your own web based application to \n"
+printf "Weaved's Launch App for Android or IoS devices. \n\n"
+PS3='Please enter your choice: '
+options=("Auto Install Everything" "Install weavedConnectd" "Register Your Device" \
+"Uninstall weavedConnectd" "Download New Project File" "Download Weaved IoT Web Kit" \
+"Install Weaved IoT Web Kit" \
+"Package weavedConnectd SDK" "Quit")
+select opt in "${options[@]}"
+do
+case $opt in
+"Auto Install Everything")
+echo "you chose choice 1"
+;;
+"Install weavedConnectd")
+echo "you chose choice 2"
+;;
+"Register Your Device")
+echo "you chose choice 3"
+;;
+"Uninstall weavedConnectd")
+echo "you chose choice 4"
+;;
+"Download New Enablement File")
+echo "you chose choice 5"
+;;
+"Download Weaved IoT Web Kit")
+echo "you chose choice 6"
+;;
+"Install Weaved IoT Web Kit")
+echo "you chose choice 7"
+;;
+"Package weavedConnectd SDK")
+echo "you chose choice 8"
+;;
+"Quit")
+break
+;;
+*) echo invalid option;;
+esac
+done
+}
+######### End Menu #########
+
+
+
 ######### Main Program #########
 main()
 {
@@ -358,4 +411,4 @@ main()
     exit
 }
 ######### End Main Program #########
-main
+menu
