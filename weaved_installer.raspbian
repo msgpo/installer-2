@@ -20,6 +20,7 @@ ERR_UPDATE_KEY=5
 ERR_UPDATE=6
 ERR_INSTALL=7
 ERR_CONFIG=8
+IFS="%"
 TMP=~/.weaved
 GIT=https://github.com/Weaved/Core
 GIT_IOT_KIT_INSTALLER=https://github.com/weaved/installer
