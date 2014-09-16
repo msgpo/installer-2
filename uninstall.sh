@@ -18,6 +18,13 @@ for i in $stop; do
   sudo rm -f /etc/rc$i.d/K01weavedConnectd
 done
 
+#### uninstall Weaved IoT kit assets ########
+sudo rm /usr/bin/send_notification.sh
+
+sudo rm /var/www/index.php
+
+sudo rm -rf /var/www/Images
+
 sudo rm -f ~/weaved_iot_kit_installer.tar.gz
 
 printf "\n\n"
