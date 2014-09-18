@@ -1,111 +1,17 @@
 #!/bin/bash
 
-#  RPi_Installer.sh
+#  weaved_installer.raspbian
 #  
 #
 #  Created by Mike Young on 8/17/14.
+#  Modified 9/13/14
 #
 
-filename=RPi_Installer.sh
-
-if [ "$BASH_VERSION" = '' ]; then
-    printf "You executed this script with dash vs bash. \n"
-    printf "Please re-run using \"./$filename\" or as \"bash $filename\". \n"
-    exit
-else
-    clear
-    echo "Now launching the Weaved connectd daemon installer..."
-fi
-clear
-
-######### Begin Portal Login #########
-userLogin () #Portal login function
-{
-printf "Please enter your Weaved Portal Username (email address): \n"
-read username
-
-printf "\nNow, please enter your password: \n"
-read  -s password
-
-loginURL=https://api.weaved.com/v3/api/user/login/$username/$password
-projectsURL=https://api.weaved.com/v3/api/project/list/all
-
-resp=$(curl -s -S -X GET \
-    -H "content-type:application/json" \
-    -H "apikey:WeavedDeveloperToolsWy98ayxR" \
-    "$loginURL")
-
-loginFailed=$(echo "$resp" | grep "login failed" | sed 's/"//g')
-}
-userLogin
-
-# Retry if failed login
-while [ "$loginFailed" != "" ]; do
-    clear
-    printf "You have entered either an incorrect username or password. Please try again. \n\n"
-    userLogin
-done
-######### End Portal Login #########
-
-######### Begin Get Project List #########
-token=$(echo "$resp" | awk -F ":" '{print $3}' | awk -F "," '{print $1}' | sed -e 's/^"//'  -e 's/"$//')
-projectsStream=$(curl -s -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" "$projectsURL")
-
-# Project Keys
-projectKeys=$(echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep id | awk -F ":" '{print $2}' | sed 's/"//g')
-echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep id | awk -F ":" '{print $2}' | sed 's/"//g' > .projectKeys
-
-# Project Names
-projectNames=$(echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep name | awk -F ":" '{print $2}' | sed 's/"//g')
-echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep name | awk -F ":" '{print $2}' | sed 's/"//g' > .projectNames
-
-# Project Versions
-projectVersions=$(echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep version | awk -F ":" '{print $2}' | sed 's/"//g')
-echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep version | awk -F ":" '{print $2}' | sed 's/"//g' > .projectVersions
-
-# Number of projects
-projectNumber=$(echo "$projectKeys" | wc -l)
-
-# Present Project details as selectable options
-projectSelection ()
-{
-clear
-printf "Please select the project from the following list, which you'd like to install: \n\n"
-
-for i in $(seq 1 $projectNumber); do
-    printf "$i\t $(awk "NR==$i" .projectNames)%-5s\t $(awk "NR==$i" .projectVersions)\t $(awk "NR==$i" .projectKeys)\t\n";
-done
-read select
-}
-
-if [ "$projectNumber" == 0 ]; then
-    printf "You have not yet created any projects. Please visit our portal at http://developer.weaved.com and create a project. \n"
-    printf "Thank you!"
-    exit
-else
-    projectSelection
-fi
-
-while (( "$select" < 0 || "$select" > "$projectNumber" )); do
-    printf "Please make a valid selection from the list above: \n"
-    projectSelection
-done
-
-projectInstall=$(awk "NR==$select" .projectKeys)
-printf "\nYou selected number $select, with the following project key: $projectInstall \n\n"
-
-# Remove temp project files
-rm -f .projectKeys .projectVersions .projectNames
-
-######### End Get Project List #########
-
-######### Begin project installation of Weaved connectd daemon #########
+##### Settings #####
 FILE=/etc/apt/sources.list
 KEY=/tmp/weaved/key
-
 ROOT_UID=0
 CMD_SUCCEED=0
-
 ERR_USER=1
 ERR_CD=2
 ERR_FILE=3
@@ -116,66 +22,339 @@ ERR_INSTALL=7
 ERR_CONFIG=8
 TMP=~/.weaved
 GIT=https://github.com/Weaved/Core
+GIT_IOT_KIT_INSTALLER=https://github.com/weaved/installer
 WEAVED_DIR=/etc/weaved
 BIN_DIR=/usr/bin
 DAEMON=weavedConnectd
 NOTIFIER=notify.sh
 INIT_DIR=/etc/init.d
+filename=$(basename $0)
+loginURL=https://api.weaved.com/v4/api/user/login
+projectsURL=https://api.weaved.com/v4/api/project/list/all
+membersURL=https://api.weaved.com/v4/portal/members
+unregdevicelistURL=https://api.weaved.com/v4/api/device/list/unregistered
+regdeviceURL=https://api.weaved.com/v4/api/device/register
+##### End Settings #####
 
-printf "\n***** We are now installing Weaved's connectd daemon for your project... ***** \n\n"
+##### Check for Bash #####
+bashCheck()
+{
+    if [ "$BASH_VERSION" = '' ]; then
+        clear
+        printf "You executed this script with dash vs bash! \n\n"
+        printf "Unfortunately, not all shells are the same. \n\n"
+        printf "Please execute \"chmod +x $filename\" and then \n"
+        printf "execute \"./$filename\".  \n\n"
+        printf "Thank you! \n"
+        exit
+    else
+        #clear
+        echo "Now launching the Weaved connectd daemon installer..."
+    fi
+    #clear
+}
+##### End Bash Check #####
 
-if [ ! -d "WEAVED_DIR" ]; then
-    sudo mkdir -p $WEAVED_DIR/services
-fi
-sudo wget http://apiaws.yoics.net/v3/portal/members/downloadHandler.php?id=$projectInstall -O $WEAVED_DIR/services/http.conf
+######### Ask Function #########
+ask()
+{
+    while true; do
+        if [ "${2:-}" = "Y" ]; then
+            prompt="Y/n"
+            default=Y
+        elif [ "${2:-}" = "N" ]; then
+            prompt="y/N"
+            default=N
+        else
+            prompt="y/n"
+            default=
+            fi
+    # Ask the question
+    read -p "$1 [$prompt] " REPLY
+    # Default?
+    if [ -z "$REPLY" ]; then
+        REPLY=$default
+    fi
+    # Check if the reply is valid
+    case "$REPLY" in
+    Y*|y*) return 0 ;;
+    N*|n*) return 1 ;;
+    esac
+    done
+}
+######### End Ask Function #########
 
-# Retrieve latest Weaved software from GitHub and install into proper locations
-if [ ! -d "$TMP" ]; then
-    mkdir $TMP
-fi
-cd $TMP
-git clone $GIT
-sudo cp $TMP/Core/binaries/$DAEMON.pi $BIN_DIR/$DAEMON
-sudo cp $TMP/Core/startup_scripts/$DAEMON.beagle $INIT_DIR/$DAEMON
-sudo cp $TMP/Core/notification/$NOTIFIER $BIN_DIR
+#########  Non Numeric Values #########
+numericCheck()
+{
+    test -z "$input" -o -n "`echo $input | tr -d '[0-9]'`" && echo NaN
+}
+#########  End Non Numeric Values #########
 
-# Make files executable
-sudo chmod +x $BIN_DIR/$DAEMON
-sudo chmod +x $INIT_DIR/$DAEMON
-sudo chmod +x $BIN_DIR/$NOTIFIER
+#########  Check prior installs #########
+checkForPriorInstalls()
+{
+    if [ -d "/etc/weaved/services" ]; then
+        clear
+        printf "It looks as if there's a previous version of Weaved's Connectd service installed. \n"
+        printf "Installing over the prior installation can lead to unstable behavior. \n\n"
+        if ask "Would you like to uninstall the prior installation? "; then
+            printf "\nUninstalling prior installation of Weaved's Connectd service... \n"
+            wget https://raw.githubusercontent.com/weaved/installer/master/uninstall.sh
+            chmod +x uninstall.sh
+            ./uninstall.sh
+            rm -f ./uninstall.sh
+            printf "Prior installation now removed. Now proceeding with new installation... \n"
+        else
+            printf "\nYou've chosen not to remove your old installation, so this program will \n"
+            printf "now terminate. \n"
+            exit
+        fi
+    fi
+}
+#########  Check prior installs #########
 
-# Add startup levels
-sudo update-rc.d $DAEMON defaults
-levels="0 1 2 3 4 5 6"
-for level in $levels; do
-  sudo rm -f /etc/rc$level.d/*$DAEMON
-done
+######### Begin Portal Login #########
+userLogin () #Portal login function
+{
+    printf "Please enter your Weaved Portal Username (email address): \n"
+    read username
 
-start="2 3 4 5"
-for i in $start; do
-  sudo ln -sf $INIT_DIR/$DAEMON /etc/rc$i.d/S20$DAEMON
-done
+    printf "\nNow, please enter your password: \n"
+    read  -s password
 
-stop="0 1 6"
-for i in $stop; do
-  sudo ln -sf $INIT_DIR/$DAEMON /etc/rc$i.d/K01$DAEMON
-done
+    resp=$(curl -s -S -X GET \
+        -H "content-type:application/json" \
+        -H "apikey:WeavedDeveloperToolsWy98ayxR" \
+        "$loginURL/$username/$password")
 
-# Startup the connectd daemon
-printf "\n\n"
-printf "*** Installation of Weaved's connectd daemon has completed \n"
-printf "*** and we are now starting the service. Please be sure to \n"
-printf "*** register your device. \n\n"
-printf "Now starting the Weaved connectd daemon..."
-printf "\n\n"
-sudo /etc/init.d/$DAEMON start
-printf "\n"
+    token=$(echo "$resp" | awk -F ":" '{print $3}' | awk -F "," '{print $1}' | sed -e 's/^"//'  -e 's/"$//')
+    loginFailed=$(echo "$resp" | grep "login failed" | sed 's/"//g')
+    login404=$(echo "$resp" | grep 404 | sed 's/"//g')
+}
+######### End Portal Login #########
 
-# Remove Git download
-printf "Would you like to download the Weaved IoT Web Kit? (Y/N) "
-read choice
-if [ `echo $choice | tr [:upper:] [:lower:]` = `echo "Y" | tr [:upper:] [:lower:]` ]; then 
-  cp ~/.weaved/Core/binaries/weaved_iot_kit_installer.tar.gz ~/.
-fi
-rm -rf ~/.weaved
-######### End project installation of weaved daemon #########
+######### Test Login #########
+testLogin()
+{
+    while [[ "$loginFailed" != "" || "$login404" != "" ]]; do
+        clear
+        printf "You have entered either an incorrect username or password. Please try again. \n\n"
+        userLogin
+    done
+}
+######### End Test Login #########
+
+######### Begin Project Selection Section #########
+getProject()
+{
+    projectsStream=$(curl -s -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" "$projectsURL")
+    # Project Keys
+    projectKeys=$(echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep id | awk -F ":" '{print $2}' | sed 's/"//g')
+    echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep id | awk -F ":" '{print $2}' | sed 's/"//g' > .projectKeys
+    # Project Names
+    projectNames=$(echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep name | awk -F ":" '{print $2}' | sed 's/"//g')
+    echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep name | awk -F ":" '{print $2}' | sed 's/"//g' > .projectNames
+    # Project Versions
+    projectVersions=$(echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep version | awk -F ":" '{print $2}' | sed 's/"//g')
+    echo $projectsStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep version | awk -F ":" '{print $2}' | sed 's/"//g' > .projectVersions
+    # Number of projects
+    projectNumber=$(echo "$projectKeys" | wc -l)
+}
+
+projectSelection()
+{
+    clear
+    # Present Project details as selectable options
+    printf "Please select the project from the following list, which you'd like to install: \n\n"
+
+    for i in $(seq 1 $projectNumber); do
+        printf "$i\t $(awk "NR==$i" .projectNames)%-5s\t $(awk "NR==$i" .projectVersions)\t $(awk "NR==$i" .projectKeys)\t\n";
+    done
+    read select
+}
+
+checkforValidProject()
+{
+    if [ "$projectNumber" == 0 ]; then
+        printf "You have not yet created any projects. Please visit our portal at http://developer.weaved.com and create a project. \n"
+        printf "Thank you!"
+        exit
+    else
+        while [[ "$select" -le 0 || "$select" > "$projectNumber" || "$select" = "" ]]; do
+            printf "Please make a valid selection from the list above: \n"
+            projectSelection
+        done
+    fi
+}
+
+installProject()
+{
+    projectInstall=$(awk "NR==$select" .projectKeys)
+    printf "\nYou selected number $select, with the following project key: $projectInstall \n\n"
+    # Remove temp project files
+    rm -f .projectKeys .projectVersions .projectNames
+    printf "\n***** We are now installing Weaved's weavedConnectd daemon for your project... ***** \n\n"
+
+    if [ ! -d "WEAVED_DIR" ]; then
+        sudo mkdir -p $WEAVED_DIR/services
+    fi
+    sudo wget http://apiaws.yoics.net/v3/portal/members/downloadHandler.php?id=$projectInstall -O $WEAVED_DIR/services/http.conf
+}
+######### End Project Selection Section #########
+
+######### Service Install #########
+installWeavedConnectd()
+{
+    # Retrieve latest Weaved software from GitHub and install into proper locations
+    if [ ! -d "$TMP" ]; then
+        mkdir $TMP
+    fi
+    cd $TMP
+    git clone $GIT
+    sudo cp $TMP/Core/binaries/$DAEMON.beagle $BIN_DIR/$DAEMON
+    sudo cp $TMP/Core/startup_scripts/$DAEMON.beagle $INIT_DIR/$DAEMON
+    sudo cp $TMP/Core/notification/$NOTIFIER $BIN_DIR
+
+    # Make files executable
+    sudo chmod +x $BIN_DIR/$DAEMON
+    sudo chmod +x $INIT_DIR/$DAEMON
+    sudo chmod +x $BIN_DIR/$NOTIFIER
+
+    # Add startup levels
+    sudo update-rc.d $DAEMON defaults
+    levels="0 1 2 3 4 5 6"
+    for level in $levels; do
+        sudo rm -f /etc/rc$level.d/*$DAEMON
+    done
+
+    start="2 3 4 5"
+    for i in $start; do
+        sudo ln -sf $INIT_DIR/$DAEMON /etc/rc$i.d/S20$DAEMON
+    done
+
+    stop="0 1 6"
+    for i in $stop; do
+        sudo ln -sf $INIT_DIR/$DAEMON /etc/rc$i.d/K01$DAEMON
+    done
+
+    # Startup the connectd daemon
+    printf "\n\n"
+    printf "*** Installation of Weaved's Connectd daemon has completed \n"
+    printf "*** and we are now starting the service. Please be sure to \n"
+    printf "*** register your device. \n\n"
+    printf "Now starting the weavedConnectd daemon..."
+    printf "\n\n"
+    sudo /etc/init.d/$DAEMON start
+    printf "\n\n"
+}
+######### End Service Install #########
+
+######### Check Running Service #########
+checkDaemon()
+{
+    sleep 10
+    checkMessages=$(sudo tail -n 2 /var/log/messages | grep "Server Connection changed to state 5")
+    if [ "$checkMessages" = "" ]; then
+        clear
+        printf "Something is wrong and weavedConnectd doesn't appear to be running. \n"
+        printf "We're going to exit now... \n"
+        exit
+    else
+        clear
+        printf "Congratulations! \n\n"
+        printf "You've successfully installed weavedConnectd. \n"
+    fi
+}
+######### End Check Running Service #########
+
+######### Register Device #########
+registerDevice()
+{
+    unregdeviceStream=$(curl -s -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" "$unregdevicelistURL")
+    echo $unregdeviceStream | sed -e 's/[{}]/''/g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | tr -d "[]" | grep fulladdress | sed 's/"//g' | awk -F "fulladdress" '{print $2}'  | cut -c 2- > .unregdevList
+    uid=$(awk "NR==1" .unregdevList)
+    deviceCheck=$(cat .unregdevList | grep "No devices available")
+    if [ "$deviceCheck" != "" ]; then
+        clear
+        printf "Something went wrong and your device is not showing in the portal. \n"
+        printf "We're exiting the installer. Please go to https://forum.weaved.com for help. \n"
+        exit
+    else
+        clear
+        printf "We will now register your device with the Weaved backend services. \n"
+        printf "Please provide an alias for your device: \n"
+        read alias
+        if [ "$alias" != "" ]; then
+            printf "Your device with UID of $uid is now being provisioned... \n"
+            curl -s -i -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" -d "{\"deviceaddress\": \"$uid\", \"devicealias\": \"$alias\" }" $regdeviceURL
+            printf "\n\n\n"
+        else
+            registerDevice
+        fi
+    fi
+}
+
+######### End Register Device #########
+
+######### Weaved IoT Web Kit Install #########
+installWebKit()
+{
+    #Git Weaved IoT Web Kit installer download & install
+    printf "The Weaved IoT Web Kit is a quick way to verify that your Weaved services are properly installed and working. \n\n"
+#   printf "Would you like to download the Weaved IoT Web Kit? (Y/N) "
+#    read choice
+#    if [ `echo $choice | tr [:upper:] [:lower:]` = `echo "Y" | tr [:upper:] [:lower:]` ]; then
+    if ask "Would you like to download the Weaved IoT Web Kit?"; then
+        cd $TMP
+        git clone $GIT_IOT_KIT_INSTALLER
+        printf "You have successfully downloaded the Weaved IoT Web Kit. It is called \"weaved_iot_kit_installer.tar.gz\". \n"
+        if [ -s $TMP/installer/binaries/weaved_iot_kit_installer.tar.gz ]; then
+            printf "\n\n"
+            printf "*** If your Pi does not have a web app or web package and you want\n"
+            printf "*** to test Weaved services, please Install Weaved Web IoT kit.\n\n"
+            printf "*** It may take up to 20 minutes to complete. \n"
+            printf "\n\n"
+            if ask "Do you want to Install Weaved Web IoT Kit?"; then
+                printf "\nInstalling Weaved Web IoT Kit....\n"
+                cd $TMP/installer/binaries
+                tar -xvzf ./weaved_iot_kit_installer.tar.gz
+                printf "\n"
+                cd weaved_iot_kit
+                ./weaved_iot_kit_install.sh
+                printf "\nThank you for installing the Weaved IoT Kit. We value your feedback at https://forum.weaved.com. \n"
+            fi
+        fi
+    fi
+}
+######### End Weaved IoT Web Kit Install #########
+
+######### Cleanup #########
+cleanUp()
+{
+    cd ~
+    rm -rf ~/.weaved
+}
+######### End Cleanup #########
+
+######### Main Program #########
+main()
+{
+    clear
+    bashCheck
+    checkForPriorInstalls
+    userLogin
+    testLogin
+    getProject
+    projectSelection
+    checkforValidProject
+    installProject
+    installWeavedConnectd
+    checkDaemon
+    registerDevice
+#   installWebKit
+    cleanUp
+    exit
+}
+######### End Main Program #########
+main
