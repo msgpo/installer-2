@@ -309,7 +309,7 @@ installWebKit()
         cd $TMP
         git clone $GIT_IOT_KIT_INSTALLER
         printf "You have successfully downloaded the Weaved IoT Web Kit. It is called \"weaved_iot_kit_installer.tar.gz\". \n"
-        if [ -s $TMP/installer/binaries/weaved_iot_kit_installer.tar.gz ]; then
+        if [ -s $TMP/installer/binaries/weaved_iot_kit_installer_bb.tar.gz ]; then
             printf "\n\n"
             printf "*** If your Pi does not have a web app or web package and you want\n"
             printf "*** to test Weaved services, please Install Weaved Web IoT kit.\n\n"
@@ -318,7 +318,7 @@ installWebKit()
             if ask "Do you want to Install Weaved Web IoT Kit?"; then
                 printf "\nInstalling Weaved Web IoT Kit....\n"
                 cd $TMP/installer/binaries
-                tar -xvzf ./weaved_iot_kit_installer.tar.gz
+                tar -xvzf ./weaved_iot_kit_installer_bb.tar.gz
                 printf "\n"
                 cd weaved_iot_kit
                 ./weaved_iot_kit_install.sh
@@ -352,7 +352,7 @@ main()
     installWeavedConnectd
     checkDaemon
     registerDevice
-#   installWebKit
+    installWebKit
     cleanUp
     exit
 }
