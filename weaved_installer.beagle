@@ -311,7 +311,7 @@ installWebKit()
         printf "You have successfully downloaded the Weaved IoT Web Kit. It is called \"weaved_iot_kit_installer.tar.gz\". \n"
         if [ -s $TMP/installer/binaries/weaved_iot_kit_installer_bb.tar.gz ]; then
             printf "\n\n"
-            printf "*** If your Pi does not have a web app or web package and you want\n"
+            printf "*** If your BeagleBone does not have a web app or web package and you want\n"
             printf "*** to test Weaved services, please Install Weaved Web IoT kit.\n\n"
             printf "*** It may take up to 20 minutes to complete. \n"
             printf "\n\n"
