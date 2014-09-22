@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#  weaved_installer.raspbian
+#  weaved_installer for BeagleBone
 #  
 #
-#  Created by Mike Young on 8/17/14.
-#  Modified 9/13/14
+#  Created by Mike Young on 9/18/14.
+#  Last Modified 9/22/14
 #
 
 ##### Settings #####
