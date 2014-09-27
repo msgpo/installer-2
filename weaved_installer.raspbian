@@ -29,11 +29,11 @@ DAEMON=weavedConnectd
 NOTIFIER=notify.sh
 INIT_DIR=/etc/init.d
 filename=$(basename $0)
-loginURL=https://api.weaved.com/v4/api/user/login
-projectsURL=https://api.weaved.com/v4/api/project/list/all
-membersURL=https://api.weaved.com/v4/portal/members
-unregdevicelistURL=https://api.weaved.com/v4/api/device/list/unregistered
-regdeviceURL=https://api.weaved.com/v4/api/device/register
+loginURL=https://api.weaved.com/api/user/login
+projectsURL=https://api.weaved.com/api/project/list/all
+membersURL=https://developer.weaved.com/portal/members
+unregdevicelistURL=https://api.weaved.com/api/device/list/unregistered
+regdeviceURL=https://api.weaved.com/api/device/register
 ##### End Settings #####
 
 ##### Check for Bash #####
@@ -119,15 +119,9 @@ userLogin () #Portal login function
 {
     printf "Please enter your Weaved Portal Username (email address): \n"
     read username
-
     printf "\nNow, please enter your password: \n"
     read  -s password
-
-    resp=$(curl -s -S -X GET \
-        -H "content-type:application/json" \
-        -H "apikey:WeavedDeveloperToolsWy98ayxR" \
-        "$loginURL/$username/$password")
-
+    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" "$loginURL/$username/$password")
     token=$(echo "$resp" | awk -F ":" '{print $3}' | awk -F "," '{print $1}' | sed -e 's/^"//'  -e 's/"$//')
     loginFailed=$(echo "$resp" | grep "login failed" | sed 's/"//g')
     login404=$(echo "$resp" | grep 404 | sed 's/"//g')
@@ -162,7 +156,7 @@ getProject()
     projectNumber=$(echo "$projectKeys" | wc -l)
 }
 
-projectSelection ()
+projectSelection()
 {
     clear
     # Present Project details as selectable options
@@ -199,7 +193,7 @@ installProject()
     if [ ! -d "WEAVED_DIR" ]; then
         sudo mkdir -p $WEAVED_DIR/services
     fi
-    sudo wget http://apiaws.yoics.net/v3/portal/members/downloadHandler.php?id=$projectInstall -O $WEAVED_DIR/services/http.conf
+    sudo wget $membersURL/downloadHandler.php?id=$projectInstall -O $WEAVED_DIR/services/http.conf
 }
 ######### End Project Selection Section #########
 
