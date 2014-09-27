@@ -193,7 +193,7 @@ installProject()
     if [ ! -d "WEAVED_DIR" ]; then
         sudo mkdir -p $WEAVED_DIR/services
     fi
-    sudo wget $membersURL/downloadHandler.php?id=$projectInstall -O $WEAVED_DIR/services/http.conf
+    sudo curl $membersURL/downloadHandler.php?id=$projectInstall > $WEAVED_DIR/services/http.conf
 }
 ######### End Project Selection Section #########
 
