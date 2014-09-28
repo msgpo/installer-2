@@ -184,16 +184,16 @@ checkforValidProject()
 
 installProject()
 {
-    projectInstall=$(awk "NR==$select" .projectKeys)
-    printf "\nYou selected number $select, with the following project key: $projectInstall \n\n"
-    # Remove temp project files
-    rm -f .projectKeys .projectVersions .projectNames
-    printf "\n***** We are now installing Weaved's weavedConnectd daemon for your project... ***** \n\n"
+projectInstall=$(awk "NR==$select" .projectKeys)
+printf "\nYou selected number $select, with the following project key: $projectInstall \n\n"
+# Remove temp project files
+rm -f .projectKeys .projectVersions .projectNames
+printf "\n***** We are now installing Weaved's weavedConnectd daemon for your project... ***** \n\n"
 
-    if [ ! -d "WEAVED_DIR" ]; then
-        sudo mkdir -p $WEAVED_DIR/services
-    fi
-    sudo curl $membersURL/downloadHandler.php?id=$projectInstall > $WEAVED_DIR/services/http.conf
+if [ ! -d "WEAVED_DIR" ]; then
+sudo mkdir -p $WEAVED_DIR/services
+fi
+sudo sh -c "curl $membersURL/downloadHandler.php?id=$projectInstall > $WEAVED_DIR/services/http.conf" #Addresses ubuntu blocking of sudo redirect
 }
 ######### End Project Selection Section #########
 

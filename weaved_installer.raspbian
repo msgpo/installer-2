@@ -193,7 +193,7 @@ installProject()
     if [ ! -d "WEAVED_DIR" ]; then
         sudo mkdir -p $WEAVED_DIR/services
     fi
-    sudo curl $membersURL/downloadHandler.php?id=$projectInstall > $WEAVED_DIR/services/http.conf
+    sudo sh -c "curl $membersURL/downloadHandler.php?id=$projectInstall > $WEAVED_DIR/services/http.conf" #Addresses ubuntu blocking of sudo redirect
 }
 ######### End Project Selection Section #########
 
