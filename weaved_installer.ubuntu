@@ -21,7 +21,7 @@ ERR_UPDATE=6
 ERR_INSTALL=7
 ERR_CONFIG=8
 TMP=~/.weaved
-GIT=https://github.com/Weaved/Core
+GIT=https://github.com/Weaved/core
 GIT_IOT_KIT_INSTALLER=https://github.com/weaved/installer
 WEAVED_DIR=/etc/weaved
 BIN_DIR=/usr/bin
@@ -214,9 +214,9 @@ installWeavedConnectd()
     fi
     cd $TMP
     git clone $GIT
-    sudo cp $TMP/Core/binaries/$DAEMON.linux $BIN_DIR/$DAEMON
-    sudo cp $TMP/Core/startup_scripts/$DAEMON.ubuntu $INIT_DIR/$DAEMON
-    sudo cp $TMP/Core/notification/$NOTIFIER $BIN_DIR
+    sudo cp $TMP/core/binaries/$DAEMON.linux $BIN_DIR/$DAEMON
+    sudo cp $TMP/core/startup_scripts/$DAEMON.ubuntu $INIT_DIR/$DAEMON
+    sudo cp $TMP/core/notification/$NOTIFIER $BIN_DIR
 
     # Make files executable
     sudo chmod +x $BIN_DIR/$DAEMON
