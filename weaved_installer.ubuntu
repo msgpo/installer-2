@@ -256,7 +256,7 @@ installWeavedConnectd()
 checkDaemon()
 {
     sleep 10
-    checkMessages=$(sudo tail -n 2 /var/log/messages | grep "Server Connection changed to state 5")
+    checkMessages=$(sudo tail -n 2 /var/log/syslog | grep "Server Connection changed to state 5")
     if [ "$checkMessages" = "" ]; then
         clear
         printf "Something is wrong and weavedConnectd doesn't appear to be running. \n"
