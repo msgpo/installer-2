@@ -295,9 +295,40 @@ registerDevice()
             registerDevice
         fi
     fi
+    regCheck=$(cat $WEAVED_DIR/services/http.conf | grep -c password)
+    if [ -f $WEAVED_DIR/services/http.conf ] && [ "$regCheck" = "2" ]; then
+        clear
+        printf "Looks like things provisioned properly and your device is now registered \n "
+        printf "as a target web server device! \n\n"
+    else
+        printf "The registration check failed, which simply looks at $WEAVED_DIR/services/http.conf \n"
+        printf "to ensure a password (aka secret) was assigned to the end of the provisioning file. \n"
+        printf "That is the final step of the provisioning process. \n\n"
+        printf "Now gathering debug information for you to send to forum@weaved.com: \n"
+        printf "This is the syslog file output \n" > register_failure.log
+        tail -n 15 /var/log/syslog >> register_failure.log
+        printf "\n" >> register_failure.log
+        cat $WEAVED_DIR/services/http.conf >> register_failure.log
+    fi
 }
-
 ######### End Register Device #########
+
+######### Install Shellinabox #########
+installWebSSH()
+{
+    sudo apt-get install shellinabox
+    cd $TMP/core/sshaas/
+    ./configure
+    make
+    sudo cp shellinaboxd /usr/bin/shellinaboxd
+    sudo cp debian/shellinabox.init /etc/init.d/shellinabox
+    sudo cp debian/shellinabox.default /etc/default/shellinabox
+    sudo cp options-enabled/* /etc/shellinabox/options-available/
+    sudo ln -sf /etc/shellinabox/options-available/* /etc/shellinabox/options-enabled/
+    cd ~
+    sudo service shellinabox start
+}
+######### End Install Shellinabox #########
 
 ######### Weaved IoT Web Kit Install #########
 installWebKit()
@@ -354,6 +385,7 @@ main()
     installWeavedConnectd
     checkDaemon
     registerDevice
+    installWebSSH
     installWebKit
     cleanUp
     exit
