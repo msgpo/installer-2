@@ -37,6 +37,8 @@ regdeviceURL=https://api.weaved.com/api/device/register
 ##### End Settings #####
 
 ##### Install Deps #####
+sudo apt-get update
+sudo apt-get install libc6:i386
 sudo apt-get install openssh-server
 sudo apt-get install git
 sudo apt-get install curl
