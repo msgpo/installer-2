@@ -308,17 +308,19 @@ registerDevice()
 ######### Install Shellinabox #########
 installWebSSH()
 {
-    sudo apt-get install shellinabox
-    cd $TMP/core/sshaas/
-    ./configure
-    make
-    sudo cp shellinaboxd /usr/bin/shellinaboxd
-    sudo cp debian/shellinabox.init /etc/init.d/shellinabox
-    sudo cp debian/shellinabox.default /etc/default/shellinabox
-    sudo cp options-enabled/* /etc/shellinabox/options-available/
-    sudo ln -sf /etc/shellinabox/options-available/* /etc/shellinabox/options-enabled/
-    cd ~
-    sudo service shellinabox start
+    if ask "Would you like to install remote SSH access?"; then
+        sudo apt-get install shellinabox
+        cd $TMP/core/sshaas/
+        ./configure
+        make
+        sudo cp shellinaboxd /usr/bin/shellinaboxd
+        sudo cp debian/shellinabox.init /etc/init.d/shellinabox
+        sudo cp debian/shellinabox.default /etc/default/shellinabox
+        sudo cp options-enabled/* /etc/shellinabox/options-available/
+        sudo ln -sf /etc/shellinabox/options-available/* /etc/shellinabox/options-enabled/
+        cd ~
+        sudo service shellinabox start
+    fi
 }
 ######### End Install Shellinabox #########
 
