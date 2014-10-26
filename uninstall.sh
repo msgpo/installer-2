@@ -19,17 +19,12 @@ for i in $stop; do
 done
 
 #### uninstall Weaved IoT kit assets ########
-sudo rm /usr/bin/send_notification.sh
-sudo rm /var/www/index.php
-sudo rm -rf /var/www/Images
-sudo rm -f ~/weaved_iot_kit_installer.tar.gz
+#sudo rm /usr/bin/send_notification.sh
+
+#sudo rm /var/www/index.php
+
+#sudo rm -rf /var/www/Images
+
+#sudo rm -f ~/weaved_iot_kit_installer.tar.gz
+
 printf "\n\n"
-
-#### uninstall shellinabox
-sudo /etc/init.d/shellinabox stop
-sudo apt-get remove shellinabox
-sudo rm -rf /etc/default/shellinabox*
-sudo rm -rf /etc/init.d/shellinabox
-sudo rm -rf /etc/shellinabox
-sudo rm -rf /usr/bin/shellinaboxd
-
