@@ -8,7 +8,7 @@
 
 ##### Settings #####
 WEAVED_PORT=WebIOPi8000
-PLATFORM=linux
+PLATFORM=pi
 OS=raspbian
 SYSLOG=/var/log/syslog
 DAEMON=weavedConnectd
@@ -661,8 +661,8 @@ sudo mv send_notification.sh $BIN_DIR
 installWeavedConnectd()
 {
 
-    sudo chmod +x ./$DAEMON.$PLATFORM
-    sudo cp ./$DAEMON.$PLATFORM $BIN_DIR/$DAEMON
+    sudo chmod +x ./bin/$DAEMON.$PLATFORM
+    sudo cp ./bin/$DAEMON.$PLATFORM $BIN_DIR/$DAEMON
 }
 ######### End Service Install #########
 
