@@ -8,7 +8,7 @@
 
 ##### Settings #####
 WEAVED_PORT=WebIOPi8000
-PLATFORM=linux
+PLATFORM=pi
 OS=raspbian
 SYSLOG=/var/log/syslog
 DAEMON=weavedConnectd
@@ -964,4 +964,3 @@ main()
 }
 ######### End Main Program #########
 main
-
