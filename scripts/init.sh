@@ -20,163 +20,179 @@ BIN_PATH=$BIN_DIR/$DAEMON
 PIDPATH=$PID_DIR/$WEAVED_PORT.pid
 LOG_FILE=/dev/null
 
-#----------------------------------------
-# End configuration                     -
-# Do not edit below this line           -
-#----------------------------------------
 
-#
-# PATH should only include /usr/* if it runs after the mountnfs.sh script
-#PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="Weaved Connectd Daemon"
-SCRIPTNAME=/etc/init.d/$WEAVED_PORT
-
-# Exit if the package is not installed
-if [ ! -x "$BIN_PATH" ] ; then
-    echo "cannot find $BIN_PATH"
-    exit 0
-fi
-
-# Load the VERBOSE setting and other rcS variables
-. /lib/init/vars.sh
-
-# Define LSB log_* functions.
-# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
-. /lib/lsb/init-functions
-
-#
-# Function that starts the daemon/service
-#
-do_start()
+# Generic functions or can be replaced by LSB functions
+# Defined here for distributions that don't define
+# log_daemon_msg
+log_daemon_msg () 
 {
-RETVAL=2
-# Return
-#   0 if daemon has been started
-#   1 if daemon was already running
-#   2 if daemon could not be started
-if [ -f ${PIDPATH} ] ; then
-    echo -n "already running "
-    RETVAL=1
-else
-    $BIN_PATH -f $WEAVED_DIR/services/$WEAVED_PORT.conf -d $PIDPATH > $LOG_FILE
-    sleep 1
-if [ -f ${PIDPATH} ] ; then
-    RETVAL=0
-    echo -n " [OK]"
-else
-    echo -n " [FAIL]"
-fi
-fi
-
-#start-stop-daemon --start --quiet --pidfile $PIDPATH --exec $DAEMON --test > /dev/null \
-#	|| return 1
-#start-stop-daemon --start --quiet --pidfile $PIDPATH --exec $DAEMON -- \
-#	$DAEMON_ARGS \
-#	|| return 2
-# Add code here, if necessary, that waits for the process to be ready
-# to handle requests from services started subsequently which depend
-# on this one.  As a last resort, sleep for some time.
+    echo $@
 }
 
+# log_end_msg
+log_end_msg () 
+{
+    retval=$1
+    if [ $retval -eq 0 ]; then
+        echo "."
+    else
+        echo " failed!"
+    fi
+    return $retval
+}
+
+
 #
-# Function that stops the daemon/service
+# Function pidrunning, returns pid of running process or 0 if not running
 #
+pidrunning()
+{
+    pid=$1
+    #ps=`ps ax`
+    tpid=`ps 'ax' | awk '$1 == '$pid'{ print $1 }'`
+#ps ax | awk '$1 == 3407 { print $1 }'
+    # make sure we got reply
+    if [ -z "$tpid" ]
+    then
+        tpid=0
+    fi
+    echo "$tpid"
+}
+
 do_stop()
 {
-# Return
-#   0 if daemon has been stopped
-#   1 if daemon was already stopped
-#   2 if daemon could not be stopped
-#   other if a failure occurred
-start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDPATH --name $WEAVED_PORT
-RETVAL="$?"
+    # Return
+    #   0 if daemon has been stopped
+    #   1 if daemon was already stopped
+    #   2 if daemon could not be stopped
+    #   other if a failure occurred
+    if [ ! -e $PIDPATH ]                                       
+    then    
+        logger "[$WEAVEDPORT] shutdown called, No Running Pidfile, Nothing Done, exiting"
+        echo -n " No Running Pidfile [FAIL]"
+        return 1;
+    fi 
+    #
+    # kill with pid, first get pid from file
+    #
+    tmp=`cat $PIDPATH`
 
-if [ 1 -eq $RETVAL ] ; then
-    echo -n " Not Running [FAIL]"
-fi
+    # kill pid if running
+    if [ "$tmp" = `pidrunning $tmp` ]
+    then
+        kill $tmp
+        sleep 1
+    else
+        logger "[$WEAVEDPORT] shutdown called, pidfile found but process not running, exiting"
+        echo -n " Pidfile Found but not running [FAIL]"
+        # Delete Pidfile
+        rm $PIDPATH 
+        return 2;        
+    fi   
+    #wait for pid to die 5 seconds
+    count=0                   # Initialise a counter
+    while [ $count -lt 5 ]  
+    do
+        if [ "$tmp" != `pidrunning $tmp`  ] 
+        then
+            echo -n " [OK]";
+            break;
+        fi
+        # not dead yet
+        count=`expr $count + 1`  # Increment the counter
+        echo -n " still running"
+        sleep 1
+    done
+                  
+    if [ "$tmp" = `pidrunning $tmp`  ]                                           
+    then
+        # hard kill
+        echo -n " hk [OK]";
+        kill -9 $tmp
+    fi 
+                        
+    # remove PID file      
+    rm $PIDPATH
 
-if [ 0 -eq $RETVAL ] ; then
-    echo -n " [OK]"
-fi
-
-if [ 2 -eq $RETVAL ] ; then
-    echo -n " [FAIL]"
-    return 2
-fi
-
-#killproc
-[ "$RETVAL" = 2 ] && return 2
-# Wait for children to finish too if this is a daemon that forks
-# and if the daemon is only ever run from this initscript.
-# If the above conditions are not satisfied then add some other code
-# that waits for the process to drop all resources that could be
-# needed by services started subsequently.  A last resort is to
-# sleep for some time.
-#start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
-[ "$?" = 2 ] && return 2
-# Many daemons don't delete their pidfiles when they exit.
-rm -f $PIDPATH
-return "$RETVAL"
+    return 0;
 }
 
-#
-# Function that sends a SIGHUP to the daemon/service
-#
-do_reload() {
-#
-# If the daemon can reload its configuration without
-# restarting (for example, when it is sent a SIGHUP),
-# then implement that here.
-#
-start-stop-daemon --stop --signal 1 --quiet --pidfile $PIDPATH --name $WEAVED_PORT
-return 0
+do_start()
+{
+    RETVAL=2
+    # Return
+    #   0 if daemon has been started
+    #   1 if daemon was already running
+    #   2 if daemon could not be started
+    if [ -f ${PIDPATH} ] ; then
+        echo -n "already running "
+        RETVAL=1
+    else
+        $BIN_PATH -f $WEAVED_DIR/services/$WEAVED_PORT.conf -d $PIDPATH > $LOG_FILE
+        sleep 1
+        if [ -f ${PIDPATH} ] ; then
+             RETVAL=0
+            echo -n " [OK]"
+        else
+            echo -n " [FAIL]"
+        fi
+    fi
 }
+
 
 case "$1" in
-start)
-[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$WEAVED_PORT"
-do_start
-case "$?" in
-0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
-2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
-esac
-;;
-stop)
-[ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$WEAVED_PORT"
-do_stop
-case "$?" in
-0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
-2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
-esac
-;;
+    start)
+        [ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$WEAVED_PORT"
+    
+        do_start
 
-restart|force-reload)
-#
-# If the "reload" option is implemented then remove the
-# 'force-reload' alias
-#
-log_daemon_msg "Restarting $DESC" "$WEAVED_PORT"
-do_stop
-case "$?" in
-0|1)
-do_start
-case "$?" in
-0) log_end_msg 0 ;;
-1) log_end_msg 1 ;; # Old process is still running
-*) log_end_msg 1 ;; # Failed to start
-esac
-;;
-*)
-# Failed to stop
-log_end_msg 1
-;;
-esac
-;;
-*)
-#echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
-echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
-exit 3
-;;
+        case "$?" in
+            0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+            2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+        esac
+    ;;
+
+    stop)
+        [ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$WEAVED_PORT"
+        
+        do_stop
+        case "$?" in
+            0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+            2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+        esac
+    ;;
+
+    restart|force-reload)
+        #
+        # If the "reload" option is implemented then remove the
+        # 'force-reload' alias
+        #
+        [ "$VERBOSE" != no ] && log_daemon_msg "Restarting $DESC" "$WEAVED_PORT"
+        [ "$VERBOSE" != no ] && log_daemon_msg "  Stopping $DESC" "$WEAVED_PORT"
+        do_stop
+        [ "$VERBOSE" != no ] && log_end_msg "$?"
+        case "$?" in
+            0|1)
+            [ "$VERBOSE" != no ] && log_daemon_msg "  Starting $DESC" "$WEAVED_PORT"
+            do_start
+            case "$?" in
+                0) log_end_msg 0 ;;
+                1) log_end_msg 1 ;; # Old process is still running
+                *) log_end_msg 1 ;; # Failed to start
+            esac
+            ;;
+
+        *)
+            # Failed to stop
+            log_end_msg 1
+        ;;
+        esac
+    ;;
+    
+    *)
+        #echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
+        echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+        exit 3
+    ;;
 esac
 
-:
