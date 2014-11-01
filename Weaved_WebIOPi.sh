@@ -7,8 +7,9 @@
 #
 
 ##### Settings #####
-WEAVED_PORT=WebIOPi8000
+VERSION=v1.1.5
 PLATFORM=pi
+WEAVED_PORT=WebIOPi8000
 OS=raspbian
 SYSLOG=/var/log/syslog
 DAEMON=weavedConnectd
@@ -34,6 +35,30 @@ loginURL=https://api.weaved.com/api/user/login
 unregdevicelistURL=https://api.weaved.com/api/device/list/unregistered
 regdeviceURL=https://api.weaved.com/api/device/register
 ##### End Settings #####
+
+displayVersion()
+{
+    printf "Installer Script Version: $VERSION \n\n"
+}
+
+##### Platform detection #####
+platformDetection()
+{
+    screening=$(uname -a | awk '{print $2}')
+    if [ "$screening" = "raspberrypi" ]; then
+        PLATFORM=pi
+        elif [ "$screening" = "beaglebone" ]; then
+            PLATFORM=beagle
+        elif [ "$screening" = "ubuntu" ]; then
+            PLATFORM=linux
+    else
+        printf "Sorry, you are running this installer on an unsupported platform. But if you go to \n"
+        printf "http://forum.weaved.com we'll be happy to help you get your platform up and running. \n\n"
+        printf "Thanks!!! \n"
+        exit
+    fi
+}
+##### End Platform detection #####
 
 ##### Check for Bash #####
 bashCheck()
@@ -100,6 +125,7 @@ checkForPriorInstalls()
             printf "\nUninstalling prior installation of Weaved's Connectd service... \n"
             if [ -e $INIT_DIR/$WEAVED_PORT ]; then
                 sudo $INIT_DIR/$WEAVED_PORT stop
+                sudo killall weavedConnectd
             fi
 
             if [ -d $WEAVED_DIR ]; then
@@ -158,6 +184,7 @@ checkForPriorInstalls()
 ######### Begin Portal Login #########
 userLogin () #Portal login function
 {
+    displayVersion
     printf "Please enter your Weaved Portal Username (email address): \n"
     read username
     printf "\nNow, please enter your password: \n"
@@ -282,16 +309,16 @@ printf "\n\n"
 checkDaemon()
 {
     sleep 10
-    checkMessages=$(sudo tail -n 2 $SYSLOG | grep "Server Connection changed to state 5")
-    if [ "$checkMessages" = "" ]; then
+    checkMessages=$(sudo tail $SYSLOG | grep "Server Connection changed to state 5" | wc -l)
+    if [ "$checkMessages" = "1" ]; then
+        clear
+        printf "Congratulations! \n\n"
+        printf "You've successfully installed Weaved services for $WEAVED_PORT. \n"
+    else
         clear
         printf "Something is wrong and weavedConnectd doesn't appear to be running. \n"
         printf "We're going to exit now... \n"
         exit
-        else
-        clear
-        printf "Congratulations! \n\n"
-        printf "You've successfully installed Weaved services for $WEAVED_PORT. \n"
     fi
 }
 ######### End Check Running Service #########
@@ -315,26 +342,60 @@ registerDevice()
         read alias
         if [ "$alias" != "" ]; then
             printf "Your device with UID of $uid is now being provisioned... \n"
-            curl -s -i -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" -d "{\"deviceaddress\": \"$uid\", \"devicealias\": \"$alias\" }" $regdeviceURL
+            registerOutput=$(curl -s -i -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" -d "{\"deviceaddress\": \"$uid\", \"devicealias\": \"$alias\" }" $regdeviceURL)
             printf "\n\n\n"
         else
             registerDevice
         fi
     fi
-    regCheck=$(cat $WEAVED_DIR/services/$WEAVED_PORT.conf | grep -c password)
-    if [ -e $WEAVED_DIR/services/$WEAVED_PORT.conf ] && [ "$regCheck" = "2" ]; then
-        clear
-        printf "Looks like things provisioned properly and your device is now registered \n "
-    elif [ "$regCheck" = "0" ]; then
-            printf "The provisioning process has failed and a password or secret was not successfully written to $WEAVED_DIR/services/$WEAVED_PORT.conf. \n"
-            printf "Now gathering debug information for you to send to forum@weaved.com: \n"
-            printf "This is the syslog file output \n" > register_failure.log
-            tail -n 15 $SYSLOG >> register_failure.log
-            printf "\n" >> register_failure.log
-            cat $WEAVED_DIR/services/$WEAVED_PORT.conf >> register_failure.log
-    fi
+    regCheck=$(cat $WEAVED_DIR/services/$WEAVED_PORT.conf | grep password | wc -l)
+    regFail=$(echo $registerOutput | grep false | wc -l)
+    regTrue=$(echo $registerOutput | grep true | wc -l)
+#    if [ -e $WEAVED_DIR/services/$WEAVED_PORT.conf ] && [ "$regCheck" = "2" ]; then
+#        clear
+#        printf "Looks like things provisioned properly and your device is now registered \n "
+#    elif [ "$regCheck" = "0" ]; then
+#            printf "The provisioning process has failed and a password or secret was not successfully written to $WEAVED_DIR/services/$WEAVED_PORT.conf. \n"
+#            printf "Now gathering debug information for you to send to forum@weaved.com: \n"
+#            printf "This is the syslog file output \n" > register_failure.log
+#            tail -n 15 $SYSLOG >> register_failure.log
+#            printf "\n" >> register_failure.log
+#            cat $WEAVED_DIR/services/$WEAVED_PORT.conf >> register_failure.log
+#    fi
 }
 ######### End Register Device #########
+
+######### Install Test Registration #########
+testRegistration()
+{
+    while [ "$regFail" = "1" ]; do
+        clear
+        printf "********************************************************************************* \n"
+        printf "Registration attempt has failed. Looks like you may be using a previously \n"
+        printf "assigned Alias. \n\n"
+        printf "We will now try again. Please wait till prompted... \n"
+        printf "********************************************************************************* \n\n"
+        registerDevice
+    done
+    if [ "$regTrue" = "1" ] && [ "$regCheck" = "2" ]; then
+        clear
+        printf "********************************************************************************* \n"
+        printf "GREAT NEWS!!! \n\n"
+        printf "Your device is now fully registered. Please install the Weaved Connect App for \n"
+        printf "iOS to complete your Weaved experience. \n"
+        printf "********************************************************************************* \n\n"
+    else
+        clear
+        printf "********************************************************************************* \n"
+        printf "The registration portal returned a successful response, but a password has not been \n"
+        printf "assigned to your $WEAVED_PORT.conf file. Please visit http://forum.weaved.com or \n"
+        printf "send an email to forum@weaved.com. We will respond to you as quickly as possible to \n"
+        printf "help get you up and running. \n\n"
+        printf "Sorry for this inconvenience!\n"
+        printf "********************************************************************************* \n\n"
+    fi
+}
+######### End Install Test Registration #########
 
 ######### Install Email Services #########
 installEmailNotification()
@@ -356,6 +417,7 @@ installEmailNotification()
 main()
 {
     clear
+#    platformDetection
     bashCheck
     checkForPriorInstalls
     userLogin
@@ -367,6 +429,7 @@ main()
     installStartStop
     checkDaemon
     registerDevice
+    testRegistration
     exit
 }
 ######### End Main Program #########
