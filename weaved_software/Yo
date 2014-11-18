@@ -1,0 +1,3 @@
+#!/bin/bash
+
+/usr/bin/send_notification.sh 0 "Yo" "ok"
