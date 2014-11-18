@@ -386,7 +386,7 @@ main()
     checkDaemon
     registerDevice
     installWebSSH
-    installWebKit
+    #installWebKit
     cleanUp
     exit
 }

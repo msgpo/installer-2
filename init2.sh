@@ -9,7 +9,7 @@
 # Description:       for more info go to http://weaved.com
 ### END INIT INFO
 
-WEAVED_PORT=
+WEAVED_PORT=Weavedssh22
 DAEMON=weavedConnectd
 WEAVED_DIR=/etc/weaved
 BIN_DIR=/usr/bin

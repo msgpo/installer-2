@@ -7,9 +7,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.0
+VERSION=v1.2.1
 AUTHOR="Mike Young"
-MODIFIED="November 16, 2014"
+MODIFIED="November 19, 2014"
 DAEMON=weavedConnectd
 WEAVED_DIR=/etc/weaved
 BIN_DIR=/usr/bin
@@ -69,7 +69,7 @@ protocolSelection()
     if [ "$PLATFORM" = "pi" ]; then
         printf "*********** Protocol Selection Menu ***********\n"
         printf "*                                             *\n"
-        printf "*    1) WebIOPi on default 8000               *\n"
+        printf "*    1) WebIOPi on default port 8000          *\n"
         printf "*    2) WebSSH on default port 3066           *\n"
         printf "*    3) HTTP on default port 80               *\n"
         printf "*    4) SSH on default port 22                *\n"
@@ -196,15 +196,30 @@ ask()
 checkForPriorInstalls()
 {
     if [ -e "/usr/bin/$DAEMON" ]; then
-        clear
-        printf "It looks as if there's a previous version of WeaveConnectd service installed. \n\n"
-        if ask "Would you like to uninstall the prior installation before proceeding? "; then
-            printf "\nUninstalling prior installation of Weaved's Connectd service... \n"
-            if [ -e $INIT_DIR/$WEAVED_PORT ]; then
-                sudo $INIT_DIR/$WEAVED_PORT stop
-                sudo killall weavedConnectd
-            fi
-
+        printf "It looks as if there's a previous version of Weaved's service installed for this protocol. \n\n"
+        if ask "Would you like to uninstall ALL prior installation(s) before proceeding? "; then
+            printf "\nUninstalling prior installation(s) of Weaved's Connectd service... \n"
+            instances=$(ls /etc/init.d/Weaved*)
+            for i in $instances; do
+                sudo $i stop
+                sudo rm $i
+                pid=$(echo $i | xargs basename)
+                if [ -e "$PID_DIR/$pid" ]; then
+                    sudo rm $PID_DIR/$pid
+                fi
+                start="2 3 4 5"
+                for i in $start; do
+                    if [ -e "/etc/rc$i.d/S20$WEAVED_PORT" ]; then
+                        sudo rm -f /etc/rc$i.d/S20$WEAVED_PORT
+                    fi
+                done
+                stop="0 1 6"
+                for i in $stop; do
+                    if [ -e /etc/rc$i.d/K01$WEAVED_PORT ]; then
+                        sudo rm -f /etc/rc$i.d/K01$WEAVED_PORT
+                    fi
+                done
+            done
             if [ -d $WEAVED_DIR ]; then
                 sudo rm -rf $WEAVED_DIR
                 printf "$WEAVED_DIR now deleted \n"
@@ -225,21 +240,6 @@ checkForPriorInstalls()
                 printf "$INIT_DIR/$WEAVED_PORT now deleted \n"
             fi
 
-            if [ -e $INIT_DIR/$WEAVED_PORT ]; then
-                sudo rm $PID_DIR/$WEAVED_PORT.pid
-                printf "$PID_DIR/$WEAVED_PORT.pid now deleted \n"
-            fi
-
-            start="2 3 4 5"
-            for i in $start; do
-              sudo rm -f /etc/rc$i.d/S20$WEAVED_PORT
-            done
-            stop="0 1 6"
-            for i in $stop; do
-                if [ -e /etc/rc$i.d/K01$WEAVED_PORT ]; then
-                    sudo rm -f /etc/rc$i.d/K01$WEAVED_PORT
-                fi
-            done
             if [ -e $BIN_DIR/send_notification.sh ]; then
                 sudo rm $BIN_DIR/send_notification.sh
                 printf "$BIN_DIR/send_notification.sh now deleted \n\n"
@@ -330,7 +330,8 @@ installWeavedConnectd()
 ######### Install Start/Stop Sripts #########
 installStartStop()
 {
-    sudo cp ./scripts/init.sh $INIT_DIR/$WEAVED_PORT
+    sed s/WEAVED_PORT=/WEAVED_PORT=$WEAVED_PORT/ < ./scripts/init.sh > ./$WEAVED_PORT.init
+    sudo mv ./$WEAVED_PORT.init $INIT_DIR/$WEAVED_PORT
     sudo chmod +x $INIT_DIR/$WEAVED_PORT
     # Add startup levels
     sudo update-rc.d $WEAVED_PORT defaults
@@ -341,7 +342,7 @@ installStartStop()
     printf "*** register your device. \n\n"
     printf "Now starting the weavedConnectd daemon..."
     printf "\n\n"
-#    sudo $INIT_DIR/$WEAVED_PORT start
+    sudo $INIT_DIR/$WEAVED_PORT start
     printf "\n\n"
 }
 ######### End Start/Stop Sripts #########
@@ -439,7 +440,7 @@ getSecret()
         secret=$(echo $secretCall | awk -F "," '{print $2}' | awk -F "\"" '{print $4}')
         echo "# password - erase this line to unregister the device" >> ./$WEAVED_PORT.conf
         echo $secret >> ./$WEAVED_PORT.conf
-        sudo cp ./$WEAVED_PORT.conf $WEAVED_DIR/services/$WEAVED_PORT.conf
+        sudo mv ./$WEAVED_PORT.conf $WEAVED_DIR/services/$WEAVED_PORT.conf
         regMsg
     elif [ "$test2" = 1 ]; then
         printf "You are missing a valid session token and must be logged back in. \n"
@@ -486,6 +487,18 @@ registerDevice()
 }
 ######### End Register Device #########
 
+######### Start Service #########
+startService()
+{
+    sudo $INIT_DIR/$WEAVED_PORT stop
+    if [ -e "$PID_DIR/$WEAVED_PORT.pid" ]; then
+        sudo rm $PID_DIR/$WEAVED_PORT.pid
+    fi
+    sudo $INIT_DIR/$WEAVED_PORT start
+}
+
+######### End Start Service #########
+
 ######### Main Program #########
 main()
 {
@@ -507,6 +520,7 @@ main()
     preregisterUID
     registerDevice
     getSecret
+    startService
 
 #    checkDaemon
 #    registerDevice
