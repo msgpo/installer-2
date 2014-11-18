@@ -7,7 +7,7 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.1
+VERSION=v1.2.2
 AUTHOR="Mike Young"
 MODIFIED="November 19, 2014"
 DAEMON=weavedConnectd
@@ -342,7 +342,19 @@ installStartStop()
     printf "*** register your device. \n\n"
     printf "Now starting the weavedConnectd daemon..."
     printf "\n\n"
-    sudo $INIT_DIR/$WEAVED_PORT start
+    if [ ! -e "/usr/bin/startweaved.sh" ]; then
+        sudo cp ./scripts/startweaved.sh $BIN_DIR
+        printf "startweaved.sh copied to $BIN_DIR\n"
+    fi
+    sudo $BIN_DIR/startweaved.sh
+    checkCron=$(sudo crontab -l | grep startweaved.sh | wc -l)
+    if [ "$checkCron" < 1 ]; then
+        sudo crontab ./scripts/cront_boot.sh
+    fi
+    checkStartWeaved=$(cat $BIN_DIR/startweaved.sh | grep $WEAVED_PORT | wc -l)
+    if [ "$checkStartWeaved" = 0 ]; then
+        sudo sh -c "echo \"$INIT_DIR/$WEAVED_PORT start\" >> $BIN_DIR/startweaved.sh"
+    fi
     printf "\n\n"
 }
 ######### End Start/Stop Sripts #########
@@ -447,14 +459,14 @@ getSecret()
         userLogin
         getSecret
     elif [ "$test3" = 1 ]; then
-        printf "Sorry, but we are having trouble provisioning your alias, so we will use $uid as your device name, instead. \n\n"
-        exit
+        printf "Sorry, but we are having trouble registering your alias, so we will use $uid as your device name, instead. \n\n"
+        alias=$uid
+        getSecret
     fi
 }
 ######### End Pre-register Device #########
 regMsg()
 {
-    clear
     printf "********************************************************************************* \n"
     printf "CONGRATULATIONS! You are now registered with Weaved. \n"
     printf "Your registration information is as follows: \n\n"
@@ -464,9 +476,9 @@ regMsg()
     printf "$uid \n\n"
     printf "Device secret: \n"
     printf "$secret \n\n"
-    printf "Your license file will be stored as: \n"
+    printf "The alias, Device UID and Device secret are kept in the License File: \n"
     printf "$WEAVED_DIR/services/$WEAVED_PORT.conf \n\n"
-    printf "If you delete this license file, you will have to re-run the installation process. \n"
+    printf "If you delete this License File, you will have to re-run the installation process. \n"
     printf "********************************************************************************* \n\n"
 }
 
@@ -521,10 +533,6 @@ main()
     registerDevice
     getSecret
     startService
-
-#    checkDaemon
-#    registerDevice
-#    testRegistration
     exit
 }
 ######### End Main Program #########
