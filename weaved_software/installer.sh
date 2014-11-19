@@ -7,7 +7,7 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.2
+VERSION=v1.2.3
 AUTHOR="Mike Young"
 MODIFIED="November 19, 2014"
 DAEMON=weavedConnectd
@@ -73,14 +73,15 @@ protocolSelection()
         printf "*    2) WebSSH on default port 3066           *\n"
         printf "*    3) HTTP on default port 80               *\n"
         printf "*    4) SSH on default port 22                *\n"
-#        printf "*    5) Custom setting                        *\n"
+        printf "*    5) Custom setting                        *\n"
         printf "*                                             *\n"
         printf "***********************************************\n\n"
         unset get_num
+        unset get_port
         while [[ ! ${get_num} =~ ^[0-9]+$ ]]; do
-            echo "Please select from the above options (1-4):"
+            echo "Please select from the above options (1-5):"
             read get_num
-            ! [[ ${get_num} -ge 1 && ${get_num} -le 4  ]] && unset get_num
+            ! [[ ${get_num} -ge 1 && ${get_num} -le 5  ]] && unset get_num
         done
         printf "You have selected: ${get_num}. \n\n"
         if [ "$get_num" = 1 ]; then
@@ -99,26 +100,47 @@ protocolSelection()
             PROTOCOL=ssh
             PORT=22
             WEAVED_PORT=Weaved$PROTOCOL$PORT
+        elif [ "$get_num" = 5 ]; then
+            CUSTOM=1
+            if ask "Is your protocol viewable through a web browser (e.g., HTTP running port 8080 vs. 80)"; then
+                PROTOCOL=web
+            else
+                PROTOCOL=ssh
+            fi
+            printf "Please enter the protcol name (e.g., ssh, http, nfs): \n"
+            read port_name
+            CUSTOM_PROTOCOL=$(echo $port_name | tr '[A-Z]' '[a-z]' | tr -d ' ')
+            while [[ ! ${get_port} =~ ^[0-9]+$ ]]; do
+                printf "Please enter your desired port number (1-65536):"
+                read get_port
+                ! [[ ${get_port} -ge 1 && ${get_port} -le 65536  ]] && unset get_port
+            done
+            PORT=$get_port
+            WEAVED_PORT=Weaved$CUSTOM_PROTOCOL$PORT
         fi
         printf "We will install Weaved services for the following:\n\n"
-        printf "Protocol: $PROTOCOL \n"
+        if [ "$CUSTOM" = 1 ]; then
+            printf "Protocol: $CUSTOM_PROTOCOL \n"
+        else
+            printf "Protocol: $PROTOCOL \n"
+        fi
         printf "Port #: $PORT \n"
         printf "Service name: $WEAVED_PORT \n\n"
 
-    else
+    elif [ "$PLATFORM" = "beagle" ] || [ "$PLATFORM" = "linux" ]; then
         printf "*********** Protocol Selection Menu ***********\n"
         printf "*                                             *\n"
         printf "*    1) WebSSH on default port 3066           *\n"
         printf "*    2) HTTP on default port 80               *\n"
         printf "*    3) SSH on default port 22                *\n"
-#        printf "*    4) Custom setting                        *\n"
+        printf "*    4) Custom setting                        *\n"
         printf "*                                             *\n"
         printf "***********************************************\n\n"
         unset get_num
         while [[ ! ${get_num} =~ ^[0-9]+$ ]]; do
-            echo "Please select from the above options (1-3):"
+            echo "Please select from the above options (1-4):"
             read get_num
-            ! [[ ${get_num} -ge 1 && ${get_num} -le 3  ]] && unset get_num
+            ! [[ ${get_num} -ge 1 && ${get_num} -le 4  ]] && unset get_num
         done
         printf "You have selected: ${get_num}. \n\n"
         if [ "$get_num" = 1 ]; then
@@ -133,13 +155,82 @@ protocolSelection()
             PROTOCOL=ssh
             PORT=22
             WEAVED_PORT=Weaved$PROTOCOL$PORT
+        elif [ "$get_num" = 4 ]; then
+            CUSTOM=1
+            if ask "Is your protocol viewable through a web browser (e.g., HTTP running port 8080 vs. 80)"; then
+                PROTOCOL=web
+            else
+                PROTOCOL=ssh
+            fi
+            printf "Please enter the protcol name (e.g., ssh, http, nfs): \n"
+            read port_name
+            CUSTOM_PROTOCOL=$(echo $port_name | tr '[A-Z]' '[a-z]' | tr -d ' ')
+            while [[ ! ${get_port} =~ ^[0-9]+$ ]]; do
+                printf "Please enter your desired port number (1-65536):"
+                read get_port
+                ! [[ ${get_port} -ge 1 && ${get_port} -le 65536  ]] && unset get_port
+            done
+            PORT=$get_port
+            WEAVED_PORT=Weaved$CUSTOM_PROTOCOL$PORT
         fi
         printf "We will install Weaved services for the following:\n\n"
-        printf "Protocol: $PROTOCOL \n"
+        if [ "$CUSTOM" = 1 ]; then
+            printf "Protocol: $CUSTOM_PROTOCOL \n"
+        else
+            printf "Protocol: $PROTOCOL \n"
+        fi
+        printf "Port #: $PORT \n"
+        printf "Service name: $WEAVED_PORT \n\n"
+    elif [ "$PLATFORM" = "macosx" ]; then
+        printf "*********** Protocol Selection Menu ***********\n"
+        printf "*                                             *\n"
+        printf "*    1) HTTP on default port 80               *\n"
+        printf "*    2) SSH on default port 22                *\n"
+        printf "*    3) Custom setting                        *\n"
+        printf "*                                             *\n"
+        printf "***********************************************\n\n"
+        unset get_num
+        while [[ ! ${get_num} =~ ^[0-9]+$ ]]; do
+            echo "Please select from the above options (1-3):"
+            read get_num
+            ! [[ ${get_num} -ge 1 && ${get_num} -le 3  ]] && unset get_num
+        done
+        printf "You have selected: ${get_num}. \n\n"
+        if [ "$get_num" = 1 ]; then
+            PROTOCOL=web
+            PORT=80
+            WEAVED_PORT=Weaved$PROTOCOL$PORT
+        elif [ "$get_num" = 2 ]; then
+            PROTOCOL=ssh
+            PORT=22
+            WEAVED_PORT=Weaved$PROTOCOL$PORT
+        elif [ "$get_num" = 3 ]; then
+            if ask "Is your protocol viewable through a web browser (e.g., HTTP running port 8080 vs. 80)"; then
+                PROTOCOL=web
+            else
+                PROTOCOL=ssh
+            fi
+            printf "Please enter the protcol name (e.g., ssh, http, nfs): \n"
+            read port_name
+            CUSTOM_PROTOCOL=$(echo $port_name | tr '[A-Z]' '[a-z]' | tr -d ' ')
+            while [[ ! ${get_port} =~ ^[0-9]+$ ]]; do
+                printf "Please enter your desired port number (1-65536):"
+                read get_port
+                ! [[ ${get_port} -ge 1 && ${get_port} -le 65536  ]] && unset get_port
+            done
+            CUSTOM=1
+            PORT=$get_port
+            WEAVED_PORT=Weaved$CUSTOM_PROTOCOL$PORT
+        fi
+        printf "We will install Weaved services for the following:\n\n"
+        if [ "$CUSTOM" = 1 ]; then
+            printf "Protocol: $CUSTOM_PROTOCOL \n"
+        else
+            printf "Protocol: $PROTOCOL \n"
+        fi
         printf "Port #: $PORT \n"
         printf "Service name: $WEAVED_PORT \n\n"
     fi
-
 }
 ##### End Protocol selection #####
 
@@ -245,6 +336,26 @@ checkForPriorInstalls()
                 printf "$BIN_DIR/send_notification.sh now deleted \n\n"
                 printf "Prior installation now removed. Now proceeding with new installation... \n"
             fi
+            checkCron=$(sudo crontab -l | grep startweaved.sh | wc -l)
+            if [ "checkCron" != 0 ]; then
+                printf "We have detected a startweaved.sh entry in crontab. \n"
+                if ask "Would you also like to remove your crontab entries? Select 'N' if unsure."; then
+                    sudo crontab -e
+                fi
+            fi
+            if [ -f "/etc/default/shellinabox" ]; then
+                if ask "We've detected that you previously installed Shellinabox for WebSSH support. Do you wish to uninstall it?"; then
+                    sudo apt-get -q -y --purge remove shellinabox
+                    if [ -f "/etc/default/shellinabox" ]; then
+                        sudo rm /etc/default/shellinabox
+                        printf "Removing /etc/default/shellinabox... \n"
+                    fi
+                    if [ -f "/etc/init.d/shellinabox" ]; then
+                        sudo rm /etc/init.d/shellinabox
+                        printf "Removing /etc/init.d/shellinabox... \n"
+                    fi
+                fi
+            fi
         else
             printf "\nYou've chosen not to remove your old installation files.  \n"
             printf "The following files will be either created or overwritten: \n\n"
@@ -257,6 +368,21 @@ checkForPriorInstalls()
     fi
 }
 #########  End Check prior installs #########
+
+#########  Install WebSSH #########
+installWebSSH()
+{
+    if [ "$PROTOCOL" = "webssh" ]; then
+        printf "You have selected to install Weaved for WebSSH, which utilizes Shellinabox. \n"
+        if ask "Would you like us to install and configure Shellinabox?"; then
+            sudo apt-get -q -y install shellinabox
+            printf "Copying... \n"
+            sudo cp -vf ./scripts/shellinabox.default /etc/default/shellinabox
+            sudo /etc/init.d/shellinabox restart
+        fi
+    fi
+}
+#########  End Install WebSSH #########
 
 ######### Begin Portal Login #########
 userLogin () #Portal login function
@@ -308,11 +434,10 @@ installNotifier()
 ######### Install Send Notification #########
 installSendNotification()
 {
-    sudo chmod +x ./scripts/send_notification.sh
-    if [ ! -f $BIN_DIR/send_notification.sh ]; then
-        sudo cp ./scripts/send_notification.sh $BIN_DIR
-        printf "Copied send_notification.sh to $BIN_DIR \n"
-    fi
+    sed s/REPLACE/$WEAVED_PORT/ < ./scripts/send_notification.sh > ./send_notification.sh
+    chmod +x ./send_notification.sh
+    sudo mv ./send_notification.sh $BIN_DIR
+    printf "Copied send_notification.sh to $BIN_DIR \n"
 }
 ######### End Install Send Notification #########
 
@@ -330,32 +455,36 @@ installWeavedConnectd()
 ######### Install Start/Stop Sripts #########
 installStartStop()
 {
-    sed s/WEAVED_PORT=/WEAVED_PORT=$WEAVED_PORT/ < ./scripts/init.sh > ./$WEAVED_PORT.init
-    sudo mv ./$WEAVED_PORT.init $INIT_DIR/$WEAVED_PORT
-    sudo chmod +x $INIT_DIR/$WEAVED_PORT
-    # Add startup levels
-    sudo update-rc.d $WEAVED_PORT defaults
-    # Startup the connectd daemon
-    printf "\n\n"
-    printf "*** Installation of weavedConnectd daemon has completed \n"
-    printf "*** and we are now starting the service. Please be sure to \n"
-    printf "*** register your device. \n\n"
-    printf "Now starting the weavedConnectd daemon..."
-    printf "\n\n"
-    if [ ! -e "/usr/bin/startweaved.sh" ]; then
-        sudo cp ./scripts/startweaved.sh $BIN_DIR
-        printf "startweaved.sh copied to $BIN_DIR\n"
+    if [ "$PLATFORM" != "macosx" ]; then
+        sed s/WEAVED_PORT=/WEAVED_PORT=$WEAVED_PORT/ < ./scripts/init.sh > ./$WEAVED_PORT.init
+        sudo mv ./$WEAVED_PORT.init $INIT_DIR/$WEAVED_PORT
+        sudo chmod +x $INIT_DIR/$WEAVED_PORT
+        # Add startup levels
+        sudo update-rc.d $WEAVED_PORT defaults
+        # Startup the connectd daemon
+        printf "\n\n"
+        printf "*** Installation of weavedConnectd daemon has completed \n"
+        printf "*** and we are now starting the service. Please be sure to \n"
+        printf "*** register your device. \n\n"
+        printf "Now starting the weavedConnectd daemon..."
+        printf "\n\n"
+        if [ ! -e "/usr/bin/startweaved.sh" ]; then
+            sudo cp ./scripts/startweaved.sh $BIN_DIR
+            printf "startweaved.sh copied to $BIN_DIR\n"
+        fi
+        sudo $BIN_DIR/startweaved.sh
+        checkCron=$(sudo crontab -l | grep startweaved.sh | wc -l)
+        if [ "$checkCron" -lt 1 ]; then
+            sudo crontab ./scripts/cront_boot.sh
+        fi
+        checkStartWeaved=$(cat $BIN_DIR/startweaved.sh | grep $WEAVED_PORT | wc -l)
+        if [ "$checkStartWeaved" = 0 ]; then
+            sed s/REPLACE_TEXT/$WEAVED_PORT/ < ./scripts/startweaved.add > ./startweaved.add
+            sudo sh -c "cat startweaved.add >> /usr/bin/startweaved.sh"
+            rm ./startweaved.add
+        fi
+        printf "\n\n"
     fi
-    sudo $BIN_DIR/startweaved.sh
-    checkCron=$(sudo crontab -l | grep startweaved.sh | wc -l)
-    if [ "$checkCron" < 1 ]; then
-        sudo crontab ./scripts/cront_boot.sh
-    fi
-    checkStartWeaved=$(cat $BIN_DIR/startweaved.sh | grep $WEAVED_PORT | wc -l)
-    if [ "$checkStartWeaved" = 0 ]; then
-        sudo sh -c "echo \"$INIT_DIR/$WEAVED_PORT start\" >> $BIN_DIR/startweaved.sh"
-    fi
-    printf "\n\n"
 }
 ######### End Start/Stop Sripts #########
 
@@ -449,11 +578,10 @@ getSecret()
     test2=$(echo $secretCall | grep -E "missing api token|api token missing" | wc -l)
     test3=$(echo $secretCall | grep "false" | wc -l)
     if [ "$test1" = 1 ]; then
-        secret=$(echo $secretCall | awk -F "," '{print $2}' | awk -F "\"" '{print $4}')
+        secret=$(echo $secretCall | awk -F "," '{print $2}' | awk -F "\"" '{print $4}' | sed s/://g)
         echo "# password - erase this line to unregister the device" >> ./$WEAVED_PORT.conf
-        echo $secret >> ./$WEAVED_PORT.conf
+        echo "password $secret" >> ./$WEAVED_PORT.conf
         sudo mv ./$WEAVED_PORT.conf $WEAVED_DIR/services/$WEAVED_PORT.conf
-        regMsg
     elif [ "$test2" = 1 ]; then
         printf "You are missing a valid session token and must be logged back in. \n"
         userLogin
@@ -467,6 +595,7 @@ getSecret()
 ######### End Pre-register Device #########
 regMsg()
 {
+    clear
     printf "********************************************************************************* \n"
     printf "CONGRATULATIONS! You are now registered with Weaved. \n"
     printf "Your registration information is as follows: \n\n"
@@ -508,8 +637,26 @@ startService()
     fi
     sudo $INIT_DIR/$WEAVED_PORT start
 }
-
 ######### End Start Service #########
+
+######### Install Yo #########
+installYo()
+{
+    sudo cp ./Yo $BIN_DIR
+}
+######### End Install Yo #########
+
+######### Port Override #########
+overridePort()
+{
+    if [ "$CUSTOM" = 1 ]; then
+        cp $WEAVED_DIR/services/$WEAVED_PORT.conf ./
+        echo "proxy_dest_port $PORT" >> ./$WEAVED_PORT.conf
+        sudo mv ./$WEAVED_PORT.conf $WEAVED_DIR/services/
+    fi
+}
+######### End Port Override #########
+
 
 ######### Main Program #########
 main()
@@ -522,6 +669,7 @@ main()
     checkForPriorInstalls
     userLogin
     testLogin
+    installWebSSH
     installEnablement
     installNotifier
     installSendNotification
@@ -532,9 +680,13 @@ main()
     preregisterUID
     registerDevice
     getSecret
+    overridePort
     startService
+    installYo
+    regMsg
     exit
 }
 ######### End Main Program #########
 main
+
 

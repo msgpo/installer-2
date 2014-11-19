@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #The weaved.conf file from which the SECRET is extracted
-CONFIG_FILE=/etc/weaved/services/WebIOPi8000.conf
+CONFIG_FILE=/etc/weaved/services/REPLACE.conf
 
 #This is where notify.sh script resides
 NOTIFY_DIR=/usr/bin
