@@ -7,7 +7,7 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.4
+VERSION=v1.2.4.1
 AUTHOR="Mike Young"
 MODIFIED="November 21, 2014"
 DAEMON=weavedConnectd
