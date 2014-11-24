@@ -7,9 +7,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.3
+VERSION=v1.2.4
 AUTHOR="Mike Young"
-MODIFIED="November 19, 2014"
+MODIFIED="November 21, 2014"
 DAEMON=weavedConnectd
 WEAVED_DIR=/etc/weaved
 BIN_DIR=/usr/bin
@@ -22,6 +22,7 @@ unregdevicelistURL=https://api.weaved.com/api/device/list/unregistered
 preregdeviceURL=https://api.weaved.com/v6/api/device/create
 regdeviceURL=https://api.weaved.com/api/device/register
 regdeviceURL2=http://api.weaved.com/v6/api/device/register
+deleteURL=http://api.weaved.com/v6/api/device/delete
 ##### End Settings #####
 
 displayVersion()
@@ -66,14 +67,16 @@ platformDetection()
 ##### Protocol selection #####
 protocolSelection()
 {
+    clear
     if [ "$PLATFORM" = "pi" ]; then
+        printf "\n\n\n"
         printf "*********** Protocol Selection Menu ***********\n"
         printf "*                                             *\n"
-        printf "*    1) WebIOPi on default port 8000          *\n"
-        printf "*    2) WebSSH on default port 3066           *\n"
-        printf "*    3) HTTP on default port 80               *\n"
-        printf "*    4) SSH on default port 22                *\n"
-        printf "*    5) Custom setting                        *\n"
+        printf "*    1) WebSSH on default port 3066           *\n"
+        printf "*    2) SSH on default port 22                *\n"
+        printf "*    3) Web (HTTP) on default port 80         *\n"
+        printf "*    4) WebIOPi on default port 8000          *\n"
+        printf "*    5) Custom (TCP)                          *\n"
         printf "*                                             *\n"
         printf "***********************************************\n\n"
         unset get_num
@@ -84,11 +87,11 @@ protocolSelection()
             ! [[ ${get_num} -ge 1 && ${get_num} -le 5  ]] && unset get_num
         done
         printf "You have selected: ${get_num}. \n\n"
-        if [ "$get_num" = 1 ]; then
+        if [ "$get_num" = 4 ]; then
             PROTOCOL=webiopi
             PORT=8000
             WEAVED_PORT=Weaved$PROTOCOL$PORT
-        elif [ "$get_num" = 2 ]; then
+        elif [ "$get_num" = 1 ]; then
             PROTOCOL=webssh
             PORT=3066
             WEAVED_PORT=Weaved$PROTOCOL$PORT
@@ -96,7 +99,7 @@ protocolSelection()
             PROTOCOL=web
             PORT=80
             WEAVED_PORT=Weaved$PROTOCOL$PORT
-        elif [ "$get_num" = 4 ]; then
+        elif [ "$get_num" = 2 ]; then
             PROTOCOL=ssh
             PORT=22
             WEAVED_PORT=Weaved$PROTOCOL$PORT
@@ -128,12 +131,13 @@ protocolSelection()
         printf "Service name: $WEAVED_PORT \n\n"
 
     elif [ "$PLATFORM" = "beagle" ] || [ "$PLATFORM" = "linux" ]; then
+        printf "\n\n\n"
         printf "*********** Protocol Selection Menu ***********\n"
         printf "*                                             *\n"
         printf "*    1) WebSSH on default port 3066           *\n"
-        printf "*    2) HTTP on default port 80               *\n"
-        printf "*    3) SSH on default port 22                *\n"
-        printf "*    4) Custom setting                        *\n"
+        printf "*    2) SSH on default port 22                *\n"
+        printf "*    3) Web (HTTP) on default port 80         *\n"
+        printf "*    4) Custom (TCP)                          *\n"
         printf "*                                             *\n"
         printf "***********************************************\n\n"
         unset get_num
@@ -182,11 +186,12 @@ protocolSelection()
         printf "Port #: $PORT \n"
         printf "Service name: $WEAVED_PORT \n\n"
     elif [ "$PLATFORM" = "macosx" ]; then
+        printf "\n\n\n"
         printf "*********** Protocol Selection Menu ***********\n"
         printf "*                                             *\n"
-        printf "*    1) HTTP on default port 80               *\n"
-        printf "*    2) SSH on default port 22                *\n"
-        printf "*    3) Custom setting                        *\n"
+        printf "*    1) SSH on default port 22                *\n"
+        printf "*    2) Web (HTTP) on default port 80         *\n"
+        printf "*    3) Custom (TCP)                          *\n"
         printf "*                                             *\n"
         printf "***********************************************\n\n"
         unset get_num
@@ -196,11 +201,11 @@ protocolSelection()
             ! [[ ${get_num} -ge 1 && ${get_num} -le 3  ]] && unset get_num
         done
         printf "You have selected: ${get_num}. \n\n"
-        if [ "$get_num" = 1 ]; then
+        if [ "$get_num" = 2 ]; then
             PROTOCOL=web
             PORT=80
             WEAVED_PORT=Weaved$PROTOCOL$PORT
-        elif [ "$get_num" = 2 ]; then
+        elif [ "$get_num" = 1 ]; then
             PROTOCOL=ssh
             PORT=22
             WEAVED_PORT=Weaved$PROTOCOL$PORT
@@ -287,14 +292,20 @@ ask()
 checkForPriorInstalls()
 {
     if [ -e "/usr/bin/$DAEMON" ]; then
+        clear
         printf "It looks as if there's a previous version of Weaved's service installed for this protocol. \n\n"
         if ask "Would you like to uninstall ALL prior installation(s) before proceeding? "; then
             printf "\nUninstalling prior installation(s) of Weaved's Connectd service... \n"
-            instances=$(ls /etc/init.d/Weaved*)
+            deleteDevice
+            if [ -f "$INIT_DIR/WebIOPi8000" ]; then
+                instances=$(ls $INIT_DIR/Weaved* && $INIT_DIR/WebIOPi8000)
+            else
+                instances=$(ls $INIT_DIR/Weaved*)
+            fi
             for i in $instances; do
                 sudo $i stop
                 sudo rm $i
-                pid=$(echo $i | xargs basename)
+                pid=$(echo $i | xargs basename).pid
                 if [ -e "$PID_DIR/$pid" ]; then
                     sudo rm $PID_DIR/$pid
                 fi
@@ -338,6 +349,7 @@ checkForPriorInstalls()
             fi
             checkCron=$(sudo crontab -l | grep startweaved.sh | wc -l)
             if [ "checkCron" != 0 ]; then
+                clear
                 printf "We have detected a startweaved.sh entry in crontab. \n"
                 if ask "Would you also like to remove your crontab entries? Select 'N' if unsure."; then
                     sudo crontab -e
@@ -373,6 +385,7 @@ checkForPriorInstalls()
 installWebSSH()
 {
     if [ "$PROTOCOL" = "webssh" ]; then
+        clear
         printf "You have selected to install Weaved for WebSSH, which utilizes Shellinabox. \n"
         if ask "Would you like us to install and configure Shellinabox?"; then
             sudo apt-get -q -y install shellinabox
@@ -387,7 +400,8 @@ installWebSSH()
 ######### Begin Portal Login #########
 userLogin () #Portal login function
 {
-    printf "Please enter your Weaved Portal Username (email address): \n"
+    printf "\n\n\n"
+    printf "Please enter your Weaved Username (email address): \n"
     read username
     printf "\nNow, please enter your password: \n"
     read  -s password
@@ -593,6 +607,19 @@ getSecret()
     fi
 }
 ######### End Pre-register Device #########
+
+######### Delete Device #########
+deleteDevice()
+{
+    instances=$(ls $WEAVED_DIR/services/)
+    for i in $instances; do
+        uid=$(tail $WEAVED_DIR/services/$i | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)
+        curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token"
+    done
+}
+######### End Delete Device #########
+
+######### Reg Message #########
 regMsg()
 {
     clear
@@ -610,6 +637,7 @@ regMsg()
     printf "If you delete this License File, you will have to re-run the installation process. \n"
     printf "********************************************************************************* \n\n"
 }
+######### End Reg Message #########
 
 ######### Register Device #########
 registerDevice()
@@ -664,11 +692,11 @@ main()
     clear
     displayVersion
     bashCheck
+    userLogin
+    testLogin
     platformDetection
     protocolSelection
     checkForPriorInstalls
-    userLogin
-    testLogin
     installWebSSH
     installEnablement
     installNotifier
@@ -688,5 +716,3 @@ main()
 }
 ######### End Main Program #########
 main
-
-
