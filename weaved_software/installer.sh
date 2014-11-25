@@ -7,9 +7,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.4.1
+VERSION=v1.2.5
 AUTHOR="Mike Young"
-MODIFIED="November 21, 2014"
+MODIFIED="November 24, 2014"
 DAEMON=weavedConnectd
 WEAVED_DIR=/etc/weaved
 BIN_DIR=/usr/bin
@@ -68,6 +68,7 @@ platformDetection()
 protocolSelection()
 {
     clear
+    CUSTOM=0
     if [ "$PLATFORM" = "pi" ]; then
         printf "\n\n\n"
         printf "*********** Protocol Selection Menu ***********\n"
@@ -91,24 +92,30 @@ protocolSelection()
             PROTOCOL=webiopi
             PORT=8000
             WEAVED_PORT=Weaved$PROTOCOL$PORT
+            SERVICETYPE=00:07
         elif [ "$get_num" = 1 ]; then
             PROTOCOL=webssh
             PORT=3066
             WEAVED_PORT=Weaved$PROTOCOL$PORT
+            SERVICETYPE=00:07
         elif [ "$get_num" = 3 ]; then
             PROTOCOL=web
             PORT=80
             WEAVED_PORT=Weaved$PROTOCOL$PORT
+            SERVICETYPE=00:07
         elif [ "$get_num" = 2 ]; then
             PROTOCOL=ssh
             PORT=22
             WEAVED_PORT=Weaved$PROTOCOL$PORT
+            SERVICETYPE=00:1C
         elif [ "$get_num" = 5 ]; then
             CUSTOM=1
             if ask "Is your protocol viewable through a web browser (e.g., HTTP running port 8080 vs. 80)"; then
                 PROTOCOL=web
+                SERVICETYPE=00:07
             else
                 PROTOCOL=ssh
+                SERVICETYPE=00:1D
             fi
             printf "Please enter the protcol name (e.g., ssh, http, nfs): \n"
             read port_name
@@ -128,7 +135,8 @@ protocolSelection()
             printf "Protocol: $PROTOCOL \n"
         fi
         printf "Port #: $PORT \n"
-        printf "Service name: $WEAVED_PORT \n\n"
+        printf "Service name: $WEAVED_PORT \n"
+        printf "Service type: $SERVICETYPE \n\n"
 
     elif [ "$PLATFORM" = "beagle" ] || [ "$PLATFORM" = "linux" ]; then
         printf "\n\n\n"
@@ -141,6 +149,7 @@ protocolSelection()
         printf "*                                             *\n"
         printf "***********************************************\n\n"
         unset get_num
+        unset get_port
         while [[ ! ${get_num} =~ ^[0-9]+$ ]]; do
             echo "Please select from the above options (1-4):"
             read get_num
@@ -151,20 +160,25 @@ protocolSelection()
             PROTOCOL=webssh
             PORT=3066
             WEAVED_PORT=Weaved$PROTOCOL$PORT
-        elif [ "$get_num" = 2 ]; then
+            SERVICETYPE=00:07
+        elif [ "$get_num" = 3 ]; then
             PROTOCOL=web
             PORT=80
             WEAVED_PORT=Weaved$PROTOCOL$PORT
-        elif [ "$get_num" = 3 ]; then
+            SERVICETYPE=00:07
+        elif [ "$get_num" = 2 ]; then
             PROTOCOL=ssh
             PORT=22
             WEAVED_PORT=Weaved$PROTOCOL$PORT
+            SERVICETYPE=00:1C
         elif [ "$get_num" = 4 ]; then
             CUSTOM=1
             if ask "Is your protocol viewable through a web browser (e.g., HTTP running port 8080 vs. 80)"; then
                 PROTOCOL=web
+                SERVICETYPE=00:07
             else
                 PROTOCOL=ssh
+                SERVICETYPE=00:1D
             fi
             printf "Please enter the protcol name (e.g., ssh, http, nfs): \n"
             read port_name
@@ -184,7 +198,8 @@ protocolSelection()
             printf "Protocol: $PROTOCOL \n"
         fi
         printf "Port #: $PORT \n"
-        printf "Service name: $WEAVED_PORT \n\n"
+        printf "Service name: $WEAVED_PORT \n"
+        printf "Service type: $SERVICETYPE \n\n"
     elif [ "$PLATFORM" = "macosx" ]; then
         printf "\n\n\n"
         printf "*********** Protocol Selection Menu ***********\n"
@@ -195,6 +210,7 @@ protocolSelection()
         printf "*                                             *\n"
         printf "***********************************************\n\n"
         unset get_num
+        unset get_port
         while [[ ! ${get_num} =~ ^[0-9]+$ ]]; do
             echo "Please select from the above options (1-3):"
             read get_num
@@ -205,15 +221,19 @@ protocolSelection()
             PROTOCOL=web
             PORT=80
             WEAVED_PORT=Weaved$PROTOCOL$PORT
+            SERVICETYPE=00:07
         elif [ "$get_num" = 1 ]; then
             PROTOCOL=ssh
             PORT=22
             WEAVED_PORT=Weaved$PROTOCOL$PORT
+            SERVICETYPE=00:1C
         elif [ "$get_num" = 3 ]; then
             if ask "Is your protocol viewable through a web browser (e.g., HTTP running port 8080 vs. 80)"; then
                 PROTOCOL=web
+                SERVICETYPE=00:07
             else
                 PROTOCOL=ssh
+                SERVICETYPE=00:1D
             fi
             printf "Please enter the protcol name (e.g., ssh, http, nfs): \n"
             read port_name
@@ -234,7 +254,8 @@ protocolSelection()
             printf "Protocol: $PROTOCOL \n"
         fi
         printf "Port #: $PORT \n"
-        printf "Service name: $WEAVED_PORT \n\n"
+        printf "Service name: $WEAVED_PORT \n"
+        printf "Service type: $SERVICETYPE \n\n"
     fi
 }
 ##### End Protocol selection #####
@@ -350,10 +371,7 @@ checkForPriorInstalls()
             checkCron=$(sudo crontab -l | grep startweaved.sh | wc -l)
             if [ "checkCron" != 0 ]; then
                 clear
-                printf "We have detected a startweaved.sh entry in crontab. \n"
-                if ask "Would you also like to remove your crontab entries? Select 'N' if unsure."; then
-                    sudo crontab -e
-                fi
+                sudo crontab ./scripts/cront_blank.sh
             fi
             if [ -f "/etc/default/shellinabox" ]; then
                 if ask "We've detected that you previously installed Shellinabox for WebSSH support. Do you wish to uninstall it?"; then
@@ -567,7 +585,7 @@ retryFetchUID()
 ######### Pre-register Device #########
 preregisterUID()
 {
-    preregUID=$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token")
+    preregUID=$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$SERVICETYPE:00:00:00:00:00:00:00:00:00:00\"}" -H “Content-Type:application/json” -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token")
     test1=$(echo $preregUID | grep "true" | wc -l)
     test2=$(echo $preregUID | grep -E "missing api token|api token missing" | wc -l)
     test3=$(echo $preregUID | grep "false" | wc -l)
@@ -577,9 +595,9 @@ preregisterUID()
         printf "You are missing a valid session token and must be logged back in. \n"
         userLogin
         preregisterUID
-    elif [ "$test3" = 1 ]; then
-        printf "Sorry, but for some reason, the pre-registration of UID: $uid is failing. Please contact Weaved Support at http://forum.weaved.com.\n\n"
-        exit
+    #elif [ "$test3" = 1 ]; then
+    #    printf "Sorry, but for some reason, the pre-registration of UID: $uid is failing. Please contact Weaved Support at http://forum.weaved.com.\n\n"
+    #    exit
     fi
 }
 ######### End Pre-register Device #########
