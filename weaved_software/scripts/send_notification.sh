@@ -77,7 +77,7 @@ fi
 #If args not passed, used for testing purpose
 #------------for test Purpose----------------
 #       TYPE=0
-#       MSG="HelloWorld"
+#       MSG="Hello World"
 #       STATUS="OK"
 #       SECRET="9DA1FDA695387EFC5D4709C3BB898368DBE95610"
 ####################################################################
@@ -100,7 +100,7 @@ sudo chmod +x $NOTIFY_SCRIPT
 
 #running the notify script
 
-$NOTIFY_SCRIPT $TYPE $UID $SECRET $MSG $STATUS
+sh $NOTIFY_SCRIPT $TYPE $UID $SECRET "$MSG" "$STATUS"
 if [ "$?" != "$CMD_SUCCEED" ]
 then
         echo "Some Illegal changes were made to $NOTIFY_SCRIPT"
