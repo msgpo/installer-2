@@ -7,9 +7,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.5
+VERSION=v1.2.5.1
 AUTHOR="Mike Young"
-MODIFIED="November 24, 2014"
+MODIFIED="November 25, 2014"
 DAEMON=weavedConnectd
 WEAVED_DIR=/etc/weaved
 BIN_DIR=/usr/bin
@@ -28,7 +28,7 @@ deleteURL=http://api.weaved.com/v6/api/device/delete
 displayVersion()
 {
     printf "You are running installer script Version: $VERSION \n"
-    printf "last modified on $MODIFIED. \n\n"
+    printf "Last modified on $MODIFIED. \n\n"
 }
 
 ##### Platform detection #####
@@ -541,9 +541,13 @@ checkDaemon()
 ######### Fetch UID #########
 fetchUID()
 {
-    # Run weavedConnectd for 10 seconds to fetch UID
-    printf "\n\n**** We will briefly run the Weaved service for 10 seconds to obtain a UID **** \n\n"
-    ( cmdpid=$DAEMON; (sleep 10; killall $cmdpid) & $BIN_DIR/$DAEMON -f ./$WEAVED_PORT.conf )
+    # Run weavedConnectd for 30 seconds to fetch UID
+    printf "\n\n**** We will briefly run the Weaved service for 30 seconds to obtain a UID **** \n\n"
+    if [ "$PLATFORM" != "macosx" ]; then
+        timeout 30 $BIN_DIR/$DAEMON -f ./$WEAVED_PORT.conf
+    else
+        ( cmdpid=$DAEMON; (sleep 30; sudo killall $cmdpid) & $BIN_DIR/$DAEMON -f ./$WEAVED_PORT.conf )
+    fi
 }
 ######### End Fetch UID #########
 
