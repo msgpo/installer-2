@@ -36,7 +36,7 @@ then
     then
         TYPE=$1
     else
-        echo "INVALID 'TYPE' VALUE"	#(arg1)
+        echo "INVALID 'TYPE' VALUE" #(arg1)
         echo $TYPE
         exit $INV_TYPE
     fi
