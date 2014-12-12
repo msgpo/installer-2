@@ -665,7 +665,7 @@ retryFetchUID()
 ######### Pre-register Device #########
 preregisterUID()
 {
-    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H “Content-Type:application/json” -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token")"
+    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token")"
     test1="$(echo $preregUID | grep "true" | wc -l)"
     test2="$(echo $preregUID | grep -E "missing api token|api token missing" | wc -l)"
     test3="$(echo $preregUID | grep "false" | wc -l)"
@@ -694,7 +694,7 @@ preregisterUID()
 ######### Pre-register Device #########
 getSecret()
 {
-    secretCall="$(curl -s $regdeviceURL2 -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\"}" -H “Content-Type:application/json” -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token")"
+    secretCall="$(curl -s $regdeviceURL2 -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\"}" -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token")"
     test1="$(echo $secretCall | grep "true" | wc -l)"
     test2="$(echo $secretCall | grep -E "missing api token|api token missing" | wc -l)"
     test3="$(echo $secretCall | grep "false" | wc -l)"
@@ -788,7 +788,7 @@ overridePort()
 deleteDevice()
 {
     uid=$(tail $WEAVED_DIR/services/$WEAVED_PORT.conf | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)
-    curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token"
+    curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token"
     printf "\n\n"
 }
 ######### End Delete device #########
