@@ -7,10 +7,12 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.6.3
+VERSION=v1.2.6.5
 AUTHOR="Mike Young"
-MODIFIED="December 28, 2014"
+MODIFIED="January 6, 2015"
 DAEMON=weavedConnectd
+USERNAME=""
+PASSWD="
 WEAVED_DIR=/etc/weaved
 BIN_DIR=/usr/bin
 NOTIFIER=notify.sh
@@ -25,6 +27,38 @@ regdeviceURL2=http://api.weaved.com/v6/api/device/register
 deleteURL=http://api.weaved.com/v6/api/device/delete
 connectURL=http://api.weaved.com/v6/api/device/connect
 ##### End Settings #####
+
+##### Check Requirements #####
+checkRequirements()
+{
+FILE="/usr/bin/curl"
+
+if [ -f $FILE ];
+then
+   echo "."
+else
+   echo "$FILE command is not installed."
+   echo "Please run this command then try again:"
+   echo "sudo apt-get install curl"
+   echo ""
+   EXIT="1"
+fi
+
+FILE="/usr/bin/bc"
+if [ -f $FILE ];
+then
+   echo "."
+else
+   echo "$FILE command is not installed."
+   echo "Please run this command then try again:"
+   echo "sudo apt-get install bc"
+   echo ""
+   EXIT="1"
+fi
+
+if [ "$EXIT" = "1" ]; then exit; fi
+}
+##### End Check Requirements #####
 
 ##### Version #####
 displayVersion()
@@ -184,7 +218,8 @@ protocolSelection()
         printf "You have selected: %s. \n\n" "${get_num}"
         if [ "$get_num" = 3 ]; then
             PROTOCOL=webiopi
-            if ask "The default port for WebIOPi is 8000. Would you like to assign a different port number?"; then
+            printf "The default port for WebIOPi is 8000.\n"
+	    if ask "Would you like to assign a different port number?"; then
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
@@ -198,7 +233,8 @@ protocolSelection()
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 2 ]; then
             PROTOCOL=web
-            if ask "The default port for Web is 80. Would you like to assign a different port number?"; then
+            printf "The default port for Web (http) is 80.\n"
+            if ask "Would you like to assign a different port number?"; then
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
@@ -212,7 +248,8 @@ protocolSelection()
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 1 ]; then
             PROTOCOL=ssh
-            if ask "The default port for SSH is 22. Would you like to assign a different port number?"; then
+	    printf "The default port for SSH is 22.\n"
+            if ask "Would you like to assign a different port number?"; then
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
@@ -226,7 +263,8 @@ protocolSelection()
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 4 ]; then
             PROTOCOL=vnc
-            if ask "The default port for VNC is 5901. Would you like to assign a different port number?"; then
+            printf "The default port for VNC is 5901.\n"
+	    if ask "Would you like to assign a different port number?"; then
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
@@ -385,7 +423,8 @@ protocolSelection()
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 1 ]; then
             PROTOCOL=ssh
-            if ask "The default port for SSH is 22. Would you like to assign a different port number?"; then
+            print "The default port for SSH is 22."
+            if ask "Would you like to assign a different port number?"; then
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
@@ -449,7 +488,7 @@ protocolSelection()
                 if [ -f $BIN_DIR/$WEAVED_PORT.sh ]; then
                     sudo $BIN_DIR/$WEAVED_PORT.sh stop
                 else
-                    if ask "The start/stop mechanism has changed in this installer version. May we kill all Weaved services to continue?"; then
+                    if ask "The start/stop mechanism has changed in this installer version. May we stop all Weaved services to continue?"; then
                         sudo killall weavedConnectd
                     fi
                     if [ -f $PID_DIR/$WEAVED_PORT.pid ]; then
@@ -520,11 +559,19 @@ ask()
 ######### Begin Portal Login #########
 userLogin () #Portal login function
 {
-    printf "\n\n\n"
-    printf "Please enter your Weaved Username (email address): \n"
-    read username
-    printf "\nNow, please enter your password: \n"
-    read  -s password
+    if [ "$USERNAME" != "" ]; then 
+        username="$USERNAME"
+    else	
+        printf "\n\n\n"
+        printf "Please enter your Weaved Username (email address): \n"
+        read username
+    fi
+    if [ "$PASSWD" != "" ]; then
+        password="$PASSWD"
+    else
+        printf "\nNow, please enter your password: \n"
+        read  -s password
+    fi
     resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" "$loginURL/$username/$password")
     token=$(echo "$resp" | awk -F ":" '{print $3}' | awk -F "," '{print $1}' | sed -e 's/^"//'  -e 's/"$//')
     loginFailed=$(echo "$resp" | grep "login failed" | sed 's/"//g')
@@ -585,8 +632,9 @@ installWeavedConnectd()
         if [ "$(echo "$newVersion - $installedVersion" | bc -l)" != 0 ]; then
             echo "We need to update $DAEMON from v$installedVersion to v$newVersion."
             if [ -n "$(ps ax | grep weaved | grep -v grep)" ]; then
-                echo "We need to shutdown all weaved services to update the Weaved daemon."
-                if ask "In order to proceed, we need to shutdown your running instances. May we continue?"; then
+                echo "We need to shut down all Weaved services to update the Weaved daemon."
+                echo "We will restart them once installation is complete."
+                if ask "May we continue?"; then
                     sudo killall weavedConnectd
                 else
                     echo "We are exiting the installer..."
@@ -728,7 +776,7 @@ getSecret()
 regMsg()
 {
     clear
-    printf "******************************************************************************************** \n"
+    printf "************************************************************************** \n"
     printf "CONGRATULATIONS! You are now registered with Weaved. \n"
     printf "Your registration information is as follows: \n\n"
     printf "Device alias: \n"
@@ -739,9 +787,9 @@ regMsg()
     printf "%s \n\n" "$secret"
     printf "The alias, Device UID and Device secret are kept in the License File: \n"
     printf "%s/services/%s.conf \n\n" "$WEAVED_DIR" "$WEAVED_PORT"
-    printf "If you delete this License File, you will have to re-run the installation process. \n\n"
-    printf "******************************************************************************************** \n\n\n"
-    printf "Starting and stopping your service can be done by typing: \"sudo %s/%s.sh start|stop|restart\" \n" "$BIN_DIR" "$WEAVED_PORT"
+    printf "If you delete this License File, you will have to re-run the installer. \n\n"
+    printf "************************************************************************** \n\n\n"
+    printf "Starting and stopping your service can be done by typing:\n\"sudo %s/%s.sh start|stop|restart\" \n" "$BIN_DIR" "$WEAVED_PORT"
     
 }
 ######### End Reg Message #########
@@ -754,7 +802,8 @@ registerDevice()
     printf "Please provide an alias for your device: \n"
     read alias
     if [ "$alias" != "" ]; then
-        printf "Your device will be called %s. You can rename it later in the Weaved Portal. \n\n" "$alias"
+        printf "Your device will be called %s.\n\n" "$alias"
+#        echo "You can rename it later in the Weaved Portal." 
     else
         alias="$uid"
         printf "For some reason, we're having problems using your desired alias. We will instead \n"
@@ -841,6 +890,7 @@ main()
      clear
      displayVersion
      bashCheck
+     checkRequirements
      platformDetection
      weavedCompatitbility
      checkforServices
