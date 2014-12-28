@@ -7,7 +7,7 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.6.2
+VERSION=v1.2.6.3
 AUTHOR="Mike Young"
 MODIFIED="December 28, 2014"
 DAEMON=weavedConnectd
@@ -613,19 +613,19 @@ installStartStop()
     sed s/WEAVED_PORT=/WEAVED_PORT="$WEAVED_PORT"/ < ./scripts/launchweaved.sh > ./"$WEAVED_PORT".sh
     sudo mv ./"$WEAVED_PORT".sh $BIN_DIR/$WEAVED_PORT.sh
     sudo chmod +x $BIN_DIR/$WEAVED_PORT.sh
-    if [ ! -f "/usr/bin/startweaved.sh" ]; then
+    if [ ! -f /usr/bin/startweaved.sh ]; then
         sudo cp ./scripts/startweaved.sh "$BIN_DIR"
         printf "startweaved.sh copied to %s\n" "$BIN_DIR"
     fi
     checkCron=$(sudo crontab -l | grep startweaved.sh | wc -l)
-    if [ "checkCron" != 0 ]; then
+    if [ $checkCron != 0 ]; then
         sudo crontab -l 2> /dev/null; echo "@reboot /usr/bin/startweaved.sh" | sudo crontab
     fi
     checkStartWeaved=$(cat "$BIN_DIR"/startweaved.sh | grep "$WEAVED_PORT.sh" | wc -l)
-    if [ "$checkStartWeaved" = 0 ]; then
+    if [ $checkStartWeaved = 0 ]; then
         sed s/REPLACE_TEXT/"$WEAVED_PORT"/ < ./scripts/startweaved_macosx.add > ./startweaved_macosx.add
         sudo sh -c "cat startweaved_macosx.add >> /usr/bin/startweaved.sh"
-        rm ./startweaved_macosx.add
+        #rm ./startweaved_macosx.add
     fi
     printf "\n\n"
 }
