@@ -7,7 +7,7 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.6.1
+VERSION=v1.2.6.2
 AUTHOR="Mike Young"
 MODIFIED="December 28, 2014"
 DAEMON=weavedConnectd
@@ -569,12 +569,10 @@ installNotifier()
 ######### Install Send Notification #########
 installSendNotification()
 {
-    if [ ! -e "$BIN_DIR/send_notification.sh" ]; then
-        sed s/REPLACE/"$WEAVED_PORT"/ < ./scripts/send_notification.sh > ./send_notification.sh
-        chmod +x ./send_notification.sh
-        sudo mv ./send_notification.sh $BIN_DIR/notify_$WEAVED_PORT.sh
-        printf "Copied notify_%s.sh to %s \n" "$WEAVED_PORT" "$BIN_DIR"
-    fi
+    sed s/REPLACE/"$WEAVED_PORT"/ < ./scripts/send_notification.sh > ./send_notification.sh
+    chmod +x ./send_notification.sh
+    sudo mv ./send_notification.sh $BIN_DIR/notify_$WEAVED_PORT.sh
+    printf "Copied notify_%s.sh to %s \n" "$WEAVED_PORT" "$BIN_DIR"
 }
 ######### End Install Send Notification #########
 
@@ -700,7 +698,7 @@ preregisterUID()
         printf "the manual registration worked for you. Sorry for the inconvenience. \n\n"
         overridePort
         startService
-        # installYo
+        installYo
         exit
     fi
 }
@@ -742,8 +740,9 @@ regMsg()
     printf "The alias, Device UID and Device secret are kept in the License File: \n"
     printf "%s/services/%s.conf \n\n" "$WEAVED_DIR" "$WEAVED_PORT"
     printf "If you delete this License File, you will have to re-run the installation process. \n\n"
-    printf " You may now startup your Weaved service by typing: \"sudo %s/%s.sh start\" \n" "$BIN_DIR" "$WEAVED_PORT"
-    printf "******************************************************************************************** \n\n"
+    printf "******************************************************************************************** \n\n\n"
+    printf " Starting and stopping your service can be done by typing: \"sudo %s/%s.sh start|stop|restart\" \n" "$BIN_DIR" "$WEAVED_PORT"
+    
 }
 ######### End Reg Message #########
 
@@ -767,13 +766,14 @@ registerDevice()
 ######### Start Service #########
 startService()
 {
-    echo -n "Registering Weaved services for $WEAVED_PORT ";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -e "\n\n"
+    echo -n "Registering Weaved services for $WEAVED_PORT ";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -e "\n\n"
     if [ -e "$PID_DIR"/"$WEAVED_PORT.pid" ]; then
         sudo $BIN_DIR/$WEAVED_PORT.sh stop
         if [ -e "$PID_DIR"/"$WEAVED_PORT.pid" ]; then
             sudo rm "$PID_DIR"/"$WEAVED_PORT".pid
         fi
     fi
+    sudo $BIN_DIR/$WEAVED_PORT.sh start
 }
 ######### End Start Service #########
 
@@ -803,6 +803,13 @@ checkforServices()
     fi
 }
 ######### End Check for services #########
+
+######### Install Yo #########
+installYo()
+{
+    sudo cp ./Yo "$BIN_DIR"
+}
+######### End Install Yo #########
 
 ######### Port Override #########
 overridePort()
@@ -850,7 +857,7 @@ main()
      getSecret
      overridePort
      startService
-     # installYo
+     installYo
      regMsg
      exit
 }
