@@ -15,10 +15,10 @@ INV_TYPE=2
 ERR_SECRET=4
 
 SECRET="$(cat $CONFIG_FILE | grep '\<password\>' | sed -n '2p' | cut -d ' ' -f2)"
-UID="$(cat $CONFIG_FILE | grep '\<UID\>' | sed -n '2p' | cut -d ' ' -f2)"
+weavedUID="$(cat $CONFIG_FILE | grep '\<UID\>' | sed -n '2p' | cut -d ' ' -f2)"
 
 echo $SECRET
-echo $UID
+echo $weavedUID
 ###################################################################
 #This, if other 3 values(TYPE, MSG, STATUS) are sent as arguments
 ###################################################################
@@ -100,7 +100,7 @@ sudo chmod +x $NOTIFY_SCRIPT
 
 #running the notify script
 
-sh $NOTIFY_SCRIPT $TYPE $UID $SECRET "$MSG" "$STATUS"
+sh $NOTIFY_SCRIPT $TYPE $weavedUID $SECRET "$MSG" "$STATUS"
 if [ "$?" != "$CMD_SUCCEED" ]
 then
         echo "Some Illegal changes were made to $NOTIFY_SCRIPT"
