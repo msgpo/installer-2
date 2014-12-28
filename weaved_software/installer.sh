@@ -741,7 +741,7 @@ regMsg()
     printf "%s/services/%s.conf \n\n" "$WEAVED_DIR" "$WEAVED_PORT"
     printf "If you delete this License File, you will have to re-run the installation process. \n\n"
     printf "******************************************************************************************** \n\n\n"
-    printf " Starting and stopping your service can be done by typing: \"sudo %s/%s.sh start|stop|restart\" \n" "$BIN_DIR" "$WEAVED_PORT"
+    printf "Starting and stopping your service can be done by typing: \"sudo %s/%s.sh start|stop|restart\" \n" "$BIN_DIR" "$WEAVED_PORT"
     
 }
 ######### End Reg Message #########

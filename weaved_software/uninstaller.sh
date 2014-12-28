@@ -7,11 +7,11 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.6
+VERSION=v1.2
 AUTHOR="Mike Young"
-MODIFIED="December 6, 2014"
+MODIFIED="December 28, 2014"
 DAEMON=weavedConnectd
-WEAVED_DIR=/etc/weaved
+WEAVED_DIR=/etc/weaved/services
 BIN_DIR=/usr/bin
 NOTIFIER=notify.sh
 INIT_DIR=/etc/init.d
@@ -31,7 +31,7 @@ connectURL=http://api.weaved.com/api/device/connect
 ##### Check for Bash #####
 bashCheck()
 {
-    if [ "$BASH_VERSION" = '' ]; then
+    if [ -z $BASH_VERSION ]; then
         clear
         printf "You executed this script with dash vs bash! \n\n"
         printf "Unfortunately, not all shells are the same. \n\n"
@@ -40,10 +40,8 @@ bashCheck()
         printf "Thank you! \n"
         exit
     else
-        #clear
         echo "Now launching the Weaved connectd daemon installer..."
     fi
-    #clear
 }
 ##### End Bash Check #####
 
@@ -81,106 +79,61 @@ testLogin()
 }
 ######### End Test Login #########
 
-######### Delete Device #########
-deleteDevice()
+######### Detect services #########
+listWeavedServices()
 {
-    instances="$(ls $WEAVED_DIR/services/)"
-    for i in "$instances"; do
-        uid="$(tail $WEAVED_DIR/services/$i | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)"
-        curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token"
-    done
-}
-######### End Delete Device #########
-
-######### Check prior installs #########
-checkForPriorInstalls()
-{
-    if [ -e "$BIN_DIR"/"$DAEMON" ]; then
-        clear
-        printf "It looks as if there's a previous version of Weaved's service installed for this protocol. \n\n"
-        if ask "Would you like to uninstall ALL prior installation(s) before proceeding? "; then
-            printf "\nUninstalling prior installation(s) of Weaved's services... \n"
-            deleteDevice
-            if [ -f "$INIT_DIR"/"WebIOPi8000" ]; then
-                instances="$(ls "$INIT_DIR"/Weaved* && "$INIT_DIR"/WebIOPi8000)"
-            else
-                instances="$(ls "$INIT_DIR"/Weaved*)"
-            fi
-            for i in "$instances"; do
-                sudo "$i" stop
-                sudo rm "$i"
-                pid="$(echo "$i" | xargs basename)".pid
-                if [ -e "$PID_DIR"/"$pid" ]; then
-                    sudo rm "$PID_DIR"/"$pid"
-                fi
-                start="2 3 4 5"
-                for i in $start; do
-                    if [ -e "/etc/rc$i.d/S20$WEAVED_PORT" ]; then
-                        sudo rm -f /etc/rc"$i".d/S20"$WEAVED_PORT"
-                    fi
-                done
-                stop="0 1 6"
-                for i in $stop; do
-                    if [ -e /etc/rc"$i".d/K01"$WEAVED_PORT" ]; then
-                        sudo rm -f /etc/rc"$i".d/K01"$WEAVED_PORT"
-                    fi
-                done
-            done
-            if [ -d "$WEAVED_DIR" ]; then
-                sudo rm -rf "$WEAVED_DIR"
-                printf "%s now deleted \n" "$WEAVED_DIR"
-            fi
-
-            if [ -e "$BIN_DIR"/"$DAEMON" ]; then
-                sudo rm -r "$BIN_DIR"/"$DAEMON"
-                printf "%s/%s now deleted \n" "$BIN_DIR" "$DAEMON"
-            fi
-
-            if [ -e "$BIN_DIR"/"$NOTIFIER" ]; then
-                sudo rm -r "$BIN_DIR"/"$NOTIFIER"
-                printf "%s/%s now deleted \n" "$BIN_DIR" "$NOTIFIER"
-            fi
-
-            if [ -e $INIT_DIR/$WEAVED_PORT ]; then
-                sudo rm $INIT_DIR/$WEAVED_PORT
-                printf "%s/%s now deleted \n" "$INIT_DIR" "$WEAVED_PORT"
-            fi
-
-            if [ -e "$BIN_DIR"/send_notification.sh ]; then
-                sudo rm "$BIN_DIR"/send_notification.sh
-                printf "%s/send_notification.sh now deleted \n\n" "$BIN_DIR"
-                printf "Prior installation now removed. Now proceeding with new installation... \n"
-            fi
-            checkCron="$(sudo crontab -l | grep startweaved.sh | wc -l)"
-            if [ "checkCron" != 0 ]; then
-                clear
-                sudo crontab ./scripts/cront_blank.sh
-            fi
-            if [ -f "/etc/default/shellinabox" ]; then
-                if ask "We've detected that you previously installed Shellinabox for WebSSH support. Do you wish to uninstall it?"; then
-                    sudo apt-get -q -y --purge remove shellinabox
-                    if [ -f "/etc/default/shellinabox" ]; then
-                        sudo rm /etc/default/shellinabox
-                        printf "Removing /etc/default/shellinabox... \n"
-                    fi
-                    if [ -f "/etc/init.d/shellinabox" ]; then
-                        sudo rm "$INIT_DIR"/shellinabox
-                        printf "Removing %s/shellinabox... \n" "$INIT_DIR"
+    if [ -d $WEAVED_DIR ]; then
+        services=$(find $WEAVED_DIR -name Weaved*.conf)
+        echo -e "We have detected the following services: \n"
+        for service in $services; do
+            echo $service |xargs basename | awk -F "." {'print $1'}
+        done
+        echo -e "\n"
+        for service in $services; do
+            echo $service |xargs basename | awk -F "." {'print $1'}
+            if ask "Would you like to delete this service?"; then
+                uid="$(tail $service | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)"
+                curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token"
+                printf "\n"
+                if [ -f $PID_DIR/$(echo $service |xargs basename | awk -F "." {'print $1'}).pid ]; then
+                    if [ -f $BIN_DIR/$(echo $service |xargs basename | awk -F "." {'print $1'}).sh ]; then
+                        sudo $BIN_DIR/$(echo $service |xargs basename | awk -F "." {'print $1'}).sh stop
+                        sudo rm $BIN_DIR/$(echo $service |xargs basename | awk -F "." {'print $1'}).sh
                     fi
                 fi
+                if [ -f $service ]; then
+                    sudo rm $service
+                fi
+                if [ -f $BIN_DIR/notify_$(echo $service |xargs basename | awk -F "." {'print $1'}).sh ]; then
+                    sudo rm $BIN_DIR/notify_$(echo $service |xargs basename | awk -F "." {'print $1'}).sh
+                fi
+                if [ -f $INIT_DIR/$(echo $service |xargs basename | awk -F "." {'print $1'}) ]; then
+                    sudo rm $INIT_DIR/$(echo $service |xargs basename | awk -F "." {'print $1'})
+                fi
+
             fi
-        else
-            printf "\nYou've chosen not to remove your old installation files.  \n"
-            printf "The following files will be either created or overwritten: \n\n"
-            printf "%s/%s \n" "$BIN_DIR" "$DAEMON"
-            printf "%s/services/%s.conf \n" "$WEAVED_DIR" "$WEAVED_PORT"
-            printf "%s/%s \n" "$INIT_DIR" "$WEAVED_PORT"
-            printf "%s/%s \n" "$BIN_DIR" "$NOTIFIER"
-            printf "%s/%s.pid \n\n" "$PID_DIR" "$WEAVED_PORT"
+        done
+        services=$(find $WEAVED_DIR -name Weaved*.conf)
+        if [ -z $services ]; then
+            printf "\n"
+            echo "There no longer appears to be any installed services."
+            if ask "Would you like us to uninstall the rest of the Weaved software?"; then
+                if [ -n $(ps ax | grep weavedConnectd | grep -v grep) ]; then
+                    sudo killall weavedConnectd
+                fi
+                if [ -f $BIN_DIR/$DAEMON ]; then
+                    sudo rm $BIN_DIR/$DAEMON
+                fi
+                if [ -d $WEAVED_DIR ]; then
+                    sudo rm -rf /etc/weaved
+                fi
+            fi
         fi
+    else
+        echo "There doesn't appear to be any services to uninstall."
     fi
 }
-#########  End Check prior installs #########
+######### End Detect services #########
 
 ######### Ask Function #########
 ask()
@@ -214,5 +167,5 @@ displayVersion
 bashCheck
 userLogin
 testLogin
-checkForPriorInstalls
+listWeavedServices
 
