@@ -7,9 +7,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.2
+VERSION=v1.3
 AUTHOR="Mike Young"
-MODIFIED="December 28, 2014"
+MODIFIED="January 12, 2015"
 DAEMON=weavedConnectd
 WEAVED_DIR=/etc/weaved/services
 BIN_DIR=/usr/bin
@@ -114,7 +114,7 @@ listWeavedServices()
             fi
         done
         services=$(find $WEAVED_DIR -name Weaved*.conf)
-        if [ -z $services ]; then
+        if [ "$services" = "" ]; then
             printf "\n"
             echo "There no longer appears to be any installed services."
             if ask "Would you like us to uninstall the rest of the Weaved software?"; then
@@ -126,6 +126,9 @@ listWeavedServices()
                 fi
                 if [ -d $WEAVED_DIR ]; then
                     sudo rm -rf /etc/weaved
+                fi
+                if [ -f $BIN_DIR/startweaved.sh ]; then
+                    sudo rm $BIN_DIR/startweaved.sh
                 fi
             fi
         fi
