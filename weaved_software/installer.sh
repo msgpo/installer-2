@@ -7,7 +7,7 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.6.6
+VERSION=v1.2.7rc
 AUTHOR="Mike Young"
 MODIFIED="January 12, 2015"
 DAEMON=weavedConnectd
@@ -427,7 +427,7 @@ protocolSelection()
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 1 ]; then
             PROTOCOL=ssh
-            printf "The default port for SSH is 22. "
+            printf "The default port for SSH is 22.\n"
             if ask "Would you like to continue with the default port assignment?"; then
                 PORT=22
             else
