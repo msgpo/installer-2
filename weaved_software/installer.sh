@@ -7,12 +7,12 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.6.5
+VERSION=v1.2.6.6
 AUTHOR="Mike Young"
-MODIFIED="January 6, 2015"
+MODIFIED="January 12, 2015"
 DAEMON=weavedConnectd
 USERNAME=""
-PASSWD="
+PASSWD=""
 WEAVED_DIR=/etc/weaved
 BIN_DIR=/usr/bin
 NOTIFIER=notify.sh
@@ -31,32 +31,32 @@ connectURL=http://api.weaved.com/v6/api/device/connect
 ##### Check Requirements #####
 checkRequirements()
 {
-FILE="/usr/bin/curl"
+    FILE="/usr/bin/curl"
 
-if [ -f $FILE ];
-then
-   echo "."
-else
-   echo "$FILE command is not installed."
-   echo "Please run this command then try again:"
-   echo "sudo apt-get install curl"
-   echo ""
-   EXIT="1"
-fi
+    if [ -f $FILE ];
+    then
+       echo "."
+    else
+       echo "$FILE command is not installed."
+       echo "Please run this command then try again:"
+       echo "sudo apt-get install curl"
+       echo ""
+       EXIT="1"
+    fi
 
-FILE="/usr/bin/bc"
-if [ -f $FILE ];
-then
-   echo "."
-else
-   echo "$FILE command is not installed."
-   echo "Please run this command then try again:"
-   echo "sudo apt-get install bc"
-   echo ""
-   EXIT="1"
-fi
+    FILE="/usr/bin/bc"
+    if [ -f $FILE ];
+    then
+       echo "."
+    else
+       echo "$FILE command is not installed."
+       echo "Please run this command then try again:"
+       echo "sudo apt-get install bc"
+       echo ""
+       EXIT="1"
+    fi
 
-if [ "$EXIT" = "1" ]; then exit; fi
+    if [ "$EXIT" = "1" ]; then exit; fi
 }
 ##### End Check Requirements #####
 
@@ -219,7 +219,9 @@ protocolSelection()
         if [ "$get_num" = 3 ]; then
             PROTOCOL=webiopi
             printf "The default port for WebIOPi is 8000.\n"
-	    if ask "Would you like to assign a different port number?"; then
+	    if ask "Would you like to continue with the default port assignment?"; then
+                PORT=8000
+            else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
@@ -227,53 +229,51 @@ protocolSelection()
                     ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536 ]] && unset get_port
                 done
                 PORT="$get_port"
-            else
-                PORT=8000
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 2 ]; then
             PROTOCOL=web
             printf "The default port for Web (http) is 80.\n"
-            if ask "Would you like to assign a different port number?"; then
+            if ask "Would you like to continue with the default port assignment?"; then
+                PORT=80
+            else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
                     read get_port
                     ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536 ]] && unset get_port
                 done
-                PORT="$get_port"
-            else
-                PORT=80
+                PORT="$get_port"    
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 1 ]; then
             PROTOCOL=ssh
 	    printf "The default port for SSH is 22.\n"
-            if ask "Would you like to assign a different port number?"; then
+            if ask "Would you like to continue with the default port assignment?"; then
+                PORT=22
+            else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
                     read get_port
                     ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536 ]] && unset get_port
                 done
-                PORT="$get_port"
-            else
-                PORT=22
+                PORT="$get_port"    
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 4 ]; then
             PROTOCOL=vnc
             printf "The default port for VNC is 5901.\n"
-	    if ask "Would you like to assign a different port number?"; then
+	    if ask "Would you like to continue with the default port assignment?"; then
+                PORT=5901
+            else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
                     read get_port
                     ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536 ]] && unset get_port
                 done
-                PORT="$get_port"
-            else
-                PORT=5901
+                PORT="$get_port"    
             fi    
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 5 ]; then
@@ -323,44 +323,47 @@ protocolSelection()
         printf "You have selected: %s. \n\n" "${get_num}"
         if [ "$get_num" = 2 ]; then
             PROTOCOL=web
-            if ask "The default port for Web is 80. Would you like to assign a different port number?"; then
+            printf "The default port for web (http) is 80.\n"
+            if ask "Would you like to continue with the default port assignment?"; then
+                PORT=80
+            else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
                     read get_port
                     ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536  ]] && unset get_port
                 done
-                PORT="$get_port"
-            else
-                PORT=80
+                PORT="$get_port"    
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 1 ]; then
             PROTOCOL=ssh
-            if ask "The default port for SSH is 22. Would you like to assign a different port number?"; then
+            printf "The default port for SSH is 22.\n"
+            if ask "Would you like to continue with the default port assignment?"; then
+                PORT=22
+            else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
                     read get_port
                     ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536  ]] && unset get_port
                 done
-                PORT="$get_port"
-            else
-                PORT=22
+                PORT="$get_port"    
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 3 ]; then
             PROTOCOL=vnc
-            if ask "The default port for VNC is 5901. Would you like to assign a different port number?"; then
+            printf "The default port for VNC is 5901.\n"
+            if ask "Would you like to continue with the default port assignment?"; then
+                PORT=5901
+            else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
                     read get_port
                     ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536  ]] && unset get_port
                 done
-                PORT="$get_port"
-            else
-                PORT=5901
+                PORT="$get_port"    
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 4 ]; then
@@ -409,46 +412,48 @@ protocolSelection()
         printf "You have selected: %s. \n\n" "${get_num}"
         if [ "$get_num" = 2 ]; then
             PROTOCOL=web
-            if ask "The default port for Web is 80. Would you like to assign a different port number?"; then
+            printf "The default port for Web (http) is 80.\n"
+            if ask "Would you like to continue with the default port assignment?"; then
+                PORT=80
+            else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
                     read get_port
                     ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536  ]] && unset get_port
                 done
-                PORT="$get_port"
-            else
-                PORT=80
+                PORT="$get_port"    
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 1 ]; then
             PROTOCOL=ssh
-            print "The default port for SSH is 22."
-            if ask "Would you like to assign a different port number?"; then
+            printf "The default port for SSH is 22. "
+            if ask "Would you like to continue with the default port assignment?"; then
+                PORT=22
+            else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
                     read get_port
                     ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536  ]] && unset get_port
                 done
-                PORT="$get_port"
-            else
-                PORT=22
+                PORT="$get_port"    
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 3 ]; then
             PROTOCOL=vnc
-            if ask "The default port for VNC is 5900. Would you like to assign a different port number?"; then
+            printf "The default port for VNC is 5900.\n"
+            if ask "Would you like to continue with the default port assignment?"; then
+                CUSTOM=2
+                PORT=5900
+            else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
                     printf "Please enter your desired port number (1-65536):"
                     read get_port
                     ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536  ]] && unset get_port
                 done
-                PORT="$get_port"
-            else
-                CUSTOM=2
-                PORT=5900
+                PORT="$get_port"    
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 4 ]; then
@@ -913,4 +918,5 @@ main()
 }
 ######### End Main Program #########
 main
+
 
