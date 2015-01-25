@@ -7,7 +7,7 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.7rc
+VERSION=v1.2.8
 AUTHOR="Mike Young"
 MODIFIED="January 12, 2015"
 DAEMON=weavedConnectd
@@ -671,7 +671,7 @@ installStartStop()
         printf "startweaved.sh copied to %s\n" "$BIN_DIR"
     fi
     checkCron=$(sudo crontab -l | grep startweaved.sh | wc -l)
-    if [ $checkCron != 0 ]; then
+    if [ $checkCron = 0 ]; then
         sudo crontab -l 2> /dev/null; echo "@reboot /usr/bin/startweaved.sh" | sudo crontab
     fi
     checkStartWeaved=$(cat "$BIN_DIR"/startweaved.sh | grep "$WEAVED_PORT.sh" | wc -l)
