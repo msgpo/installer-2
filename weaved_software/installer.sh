@@ -7,9 +7,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.8
+VERSION=v1.2.9
 AUTHOR="Mike Young"
-MODIFIED="January 12, 2015"
+MODIFIED="February 7, 2015"
 DAEMON=weavedConnectd
 USERNAME=""
 PASSWD=""
@@ -40,18 +40,6 @@ checkRequirements()
        echo "$FILE command is not installed."
        echo "Please run this command then try again:"
        echo "sudo apt-get install curl"
-       echo ""
-       EXIT="1"
-    fi
-
-    FILE="/usr/bin/bc"
-    if [ -f $FILE ];
-    then
-       echo "."
-    else
-       echo "$FILE command is not installed."
-       echo "Please run this command then try again:"
-       echo "sudo apt-get install bc"
        echo ""
        EXIT="1"
     fi
@@ -634,7 +622,7 @@ installWeavedConnectd()
     if [ -f "$BIN_DIR/$DAEMON" ]; then
         installedVersion="$($BIN_DIR/$DAEMON | grep "Weaved, Inc." | awk {'print $2'} | awk -F "." {'print $1"."$2'})"
         newVersion="$(./bin/$DAEMON.$PLATFORM | grep "Weaved, Inc." | awk {'print $2'} | awk -F "." {'print $1"."$2'})"
-        if [ "$(echo "$newVersion - $installedVersion" | bc -l)" != 0 ]; then
+        if [ "$newVersion" != "$installedVersion" ]; then
             echo "We need to update $DAEMON from v$installedVersion to v$newVersion."
             if [ -n "$(ps ax | grep weaved | grep -v grep)" ]; then
                 echo "We need to shut down all Weaved services to update the Weaved daemon."
