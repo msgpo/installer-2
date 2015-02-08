@@ -7,9 +7,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.9
+VERSION=v1.2.10
 AUTHOR="Mike Young"
-MODIFIED="February 7, 2015"
+MODIFIED="February 8, 2015"
 DAEMON=weavedConnectd
 USERNAME=""
 PASSWD=""
@@ -117,8 +117,14 @@ platformDetection()
         PLATFORM=pi
         SYSLOG=/var/log/syslog
     elif [ "$machineType" = "armv7l" ]; then
-        PLATFORM=beagle
-        SYSLOG=/var/log/syslog
+        printf "We have detected an arm7l processor. \n"
+        if ask "Is this a Raspberry Pi 2?"; then
+            PLATFORM=pi
+            SYSLOG=/var/log/syslog
+        else
+            PLATFORM=beagle
+            SYSLOG=/var/log/syslog
+        fi
     elif [ "$machineType" = "x86_64" ] && [ "$osName" = "Linux" ]; then
         PLATFORM=linux
         if [ "$distributionName" = "debian" ] || [ "$distributionName" = "ubuntu" ]; then
