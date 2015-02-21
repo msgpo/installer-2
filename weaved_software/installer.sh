@@ -7,9 +7,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.10
+VERSION=v1.2.11
 AUTHOR="Mike Young"
-MODIFIED="February 8, 2015"
+MODIFIED="February 21, 2015"
 DAEMON=weavedConnectd
 USERNAME=""
 PASSWD=""
@@ -666,7 +666,9 @@ installStartStop()
     fi
     checkCron=$(sudo crontab -l | grep startweaved.sh | wc -l)
     if [ $checkCron = 0 ]; then
-        sudo crontab -l 2> /dev/null; echo "@reboot /usr/bin/startweaved.sh" | sudo crontab
+	sudo crontab -l > ./.crontab_old
+	echo "@reboot /usr/bin/startweaved.sh" >> ./.crontab_old
+	sudo crontab ./.crontab_old
     fi
     checkStartWeaved=$(cat "$BIN_DIR"/startweaved.sh | grep "$WEAVED_PORT.sh" | wc -l)
     if [ $checkStartWeaved = 0 ]; then
@@ -912,5 +914,3 @@ main()
 }
 ######### End Main Program #########
 main
-
-
