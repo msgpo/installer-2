@@ -7,9 +7,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.11
+VERSION=v1.2.12
 AUTHOR="Mike Young"
-MODIFIED="February 21, 2015"
+MODIFIED="February 23, 2015"
 DAEMON=weavedConnectd
 USERNAME=""
 PASSWD=""
