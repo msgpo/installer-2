@@ -7,9 +7,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.12
+VERSION=v1.2.13
 AUTHOR="Mike Young"
-MODIFIED="February 23, 2015"
+MODIFIED="February 26, 2015"
 DAEMON=weavedConnectd
 USERNAME=""
 PASSWD=""
@@ -582,7 +582,7 @@ userLogin () #Portal login function
 ######### Test Login #########
 testLogin()
 {
-    while [[ "$loginFailed" != "" || "$login404" != "" ]]; do
+    while [[ "$loginFailed" != "" ]]; do
         clear
         printf "You have entered either an incorrect username or password. Please try again. \n\n"
         userLogin
