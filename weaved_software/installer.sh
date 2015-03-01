@@ -7,9 +7,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.2.13
+VERSION=v1.2.14
 AUTHOR="Mike Young"
-MODIFIED="February 26, 2015"
+MODIFIED="February 28, 2015"
 DAEMON=weavedConnectd
 USERNAME=""
 PASSWD=""
@@ -72,7 +72,7 @@ weavedCompatitbility()
         sleep 5
     elif [ "$(cat .networkDump | grep "Send to" | grep "OK" | wc -l)" -lt 1 ]; then
         printf "Unfortunately, it appears your network may not currently be compatible with Weaved services\n."
-        printf "Please visit https://forum.weaved.com for more support.\n\n"
+        printf "Please visit http://forum.weaved.com for more support.\n\n"
         exit
     fi
 }
