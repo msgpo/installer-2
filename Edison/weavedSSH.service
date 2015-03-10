@@ -1,0 +1,12 @@
+[Unit]
+Description=Weaved-SSH
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/weavedConnectd.linux -i -f /etc/weaved/services/Weavedssh22.conf
+Restart=always
+RestartSec=10s
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

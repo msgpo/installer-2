@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+notify_Weavedhttp80.sh "1" "Weaved notification from Edison http!" "ok"
+notify_Weavedssh22.sh "1" "Weaved notification from Edison ssh!" "ok"
+

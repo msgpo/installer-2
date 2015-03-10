@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+
+notify_Weavedssh22.sh "1" "Weaved notification 2 from Edison ssh!" "ok"
+

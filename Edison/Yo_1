@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+
+notify_Weavedhttp80.sh "1" "Weaved notification 1 from Edison http!" "ok"
+
