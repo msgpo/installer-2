@@ -3,6 +3,25 @@
 # This automatically uninstalls daemons for http on port 80
 # and SSH on port 22, along with notification scripts.
 
+echo Weaved Uninstaller for Edison will now remove services for:
+echo - http on port 80
+echo - SSH on port 22
+echo "Do you wish to continue? (Y/N)"
+read word
+case $word in
+        [Yy]* )
+                echo Removing Weaved software...
+                ;;
+        [Nn]* )
+                echo Exiting...
+                exit
+                ;;
+        * )
+                echo Exiting...
+                exit
+                ;;
+esac
+
 stopWeaved.sh
 systemctl disable weavedSSH.service
 systemctl disable weavedHTTP.service

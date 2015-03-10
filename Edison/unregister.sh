@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 stopWeaved.sh
 # restore the blank default enablement/configuration files
 cp /etc/weaved/services/ssh.edison /etc/weaved/services/Weavedssh22.conf

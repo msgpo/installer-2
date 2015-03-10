@@ -5,11 +5,28 @@
 # This needs to be used with the Weaved portal V9 or later
 # registration feature.
 
-VERSION=1.0
+VERSION=1.01
 AUTHOR="Gary Worsham"
+DATE="03/10/2105"
 
-cp bash /usr/bin
-chmod +x /usr/bin/bash 
+echo Weaved Installer for Edison will now install services for:
+echo - http on port 80
+echo - SSH on port 22
+echo "Do you wish to continue? (Y/N)"
+read word
+case $word in
+	[Yy]* )
+		echo Installing...
+		;;
+	[Nn]* )
+		echo Exiting...
+		exit
+		;;
+	* )
+		echo Exiting...
+		exit
+		;;
+esac
 
 cp weavedConnectd.linux /usr/bin
 chmod +x /usr/bin/weavedConnectd.linux 
