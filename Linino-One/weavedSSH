@@ -1,0 +1,120 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (C) 2006 OpenWrt.org
+#
+
+
+#set -x
+
+START=99
+STOP=5
+
+service_name=ssh.linino
+exe=weavedConnectd
+exe_path=/usr/bin/$exe
+pidfile=/var/run/$service_name.pid
+config_path=/etc/weaved
+log_file=/dev/null
+
+SERVICE="Weavedd"
+DESC="Weaved Connectd Daemon"
+
+start() {
+    logger "[$SERVICE] Daemon Start Called"
+    if [ -f $config_path/$service_name.conf ]; then
+        if [ -f $pidfile ]; then
+                pid=`cat $pidfile`;
+                if [ -d /proc/$pid ]; then
+                    echo -e "Warning: $exe is already running (pid=$pid).";
+                    exit 1;
+                else
+                    rm -f $pidfile;
+                    echo -n "Starting $DESC..."
+                    $exe_path -f $config_path/$service_name.conf -d $pidfile > $log_file;
+                    sleep 2;
+                    if [ -f $pidfile ]; then
+                        echo -e " [OK]"
+                    else
+                        echo -e " [FAIL]"
+                    fi
+                fi
+        else
+            echo -n "Starting $DESC..."
+            $exe_path -f $config_path/$service_name.conf -d $pidfile > $log_file;
+            sleep 2;
+            if [ -f $pidfile ]; then
+                echo -e " [OK]"
+            else
+                echo -e " [FAIL]"
+            fi
+        fi
+    else
+        echo -e "Error: can not found $config_path/$service_name.conf";
+        exit 1;
+    fi
+}
+
+#
+# Function pidrunning, returns pid of running process or 0 if not running
+#
+pidrunning()
+{
+    pid=$1
+    tpid=`ps | awk '$1 == '$pid' { print $1}'`
+# make sure we got reply
+    if [ -z "$tpid" ]
+    then
+        tpid=0
+    fi
+    echo $tpid
+}
+
+PID_CFG=/var/run/ssh.linino.pid
+
+stop() {
+   logger "[$SERVICE] Daemon stop Called"
+   echo -n "Stopping $DESC..."
+#if we don't have a PID file, just exit
+           
+           if [ ! -e $pidfile ]                                       
+           then    
+              logger "[Weaved] Weaved Shutdown no pid file, exiting"
+              echo "Weaved: $pidfile - No pid file, exiting"                                                     
+              exit 1;
+           fi 
+                                                                                               
+#
+# kill with pid, first get pid from file
+#
+	tmp=`cat $pidfile`
+   
+# kill pid if running
+        if [ "$tmp" == `pidrunning $tmp`  ]               
+        then                                            
+           kill $tmp                                
+        fi
+
+#wait for pid to die 5 seconds
+        count=0                   # Initialise a counter
+        while [ $count -lt 5 ]  
+        do
+           if [ "$tmp" != `pidrunning $tmp`  ] 
+           then
+              break;
+           fi
+        # not dead yet
+           count=`expr $count + 1`  # Increment the counter
+           echo "still running"
+           sleep 1
+        done
+
+          if [ "$tmp" == `pidrunning $tmp`  ]                                           
+          then
+          # hard kill
+               kill -9 $tmp
+          fi 
+
+      # remove PID file      
+          rm $pidfile
+}
+

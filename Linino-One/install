@@ -1,0 +1,32 @@
+#!/bin/sh
+echo "Weaved secure connection services for Linino"
+read -p "Do you want to install Weaved software? (Yy/Nn)" resp
+if [ "$resp" == "y" ] || [ "$resp" = "Y" ]; then
+
+mkdir -p /etc/weaved
+cp -i conf/*.conf /etc/weaved
+
+cp weavedConnectd /usr/bin
+chmod +x /usr/bin/weavedConnectd
+
+cp weavedWEB /etc/init.d
+chmod +x /etc/init.d/weavedWEB
+/etc/init.d/weavedWEB enable
+/etc/init.d/weavedWEB start
+
+cp weavedSSH /etc/init.d
+chmod +x /etc/init.d/weavedSSH
+/etc/init.d/weavedSSH enable
+/etc/init.d/weavedSSH start
+
+chmod +x scripts/*.*
+cp -ri scripts/* /usr/bin
+
+# openssl is required for the notifications to work
+opkg update
+opkg install openssl-util
+
+echo " "
+echo "Weaved installed, set to boot and started"
+echo " "
+fi
