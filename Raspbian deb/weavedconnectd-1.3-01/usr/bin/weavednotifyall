@@ -1,0 +1,12 @@
+#!/bin/bash
+# weavednotifyall
+#
+# Sends a notification on all installed Weaved Service Attachments
+# 
+# Discover existing attachments
+channels=$(find /usr/bin/ -name notify_Weaved*)
+for channel in $channels; do
+	echo -n "Sending notification via /usr/bin/"
+	echo $channel | xargs basename
+	$channel 1 "Hello from $channel" "ok"
+done

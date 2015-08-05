@@ -1,0 +1,16 @@
+Package: weavedconnectd
+Version: 1.3-01
+Section: non-free/net
+Priority: optional
+Homepage: http://www.weaved.com
+Architecture: armhf
+Depends: libc6 (>= 2.1), mawk (>= 1.0), grep (>= 2.1.6), curl (>= 7.25.0)
+Maintainer: Gary Worsham <gary@weaved.com>
+Description: Simplifies remote connections to computers behind NAT firewalls
+ weavedconnectd allows you to connect remotely to any tcp-based service running
+ on your Linux or Mac OS/X computer. All that is a required is installation of 
+ a small daemon and configuration files. By using Weaved's cloud services, port 
+ forwarding can be completely eliminated.  Weaved supplies iOS and Android 
+ applications as well as convenient access from any browser even without Weaved 
+ installed.
+ See www.weaved.com for more details.
