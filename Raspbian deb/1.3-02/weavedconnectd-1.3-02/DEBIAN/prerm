@@ -1,0 +1,28 @@
+#!/bin/sh
+# postrm script for weavedconnectd
+#
+
+set -e
+
+case "$1" in
+
+    remove|upgrade|failed-upgrade|deconfigure)
+    weavedRunning=$(ps ax | grep weavedconnectd.pi | grep -v grep) || true	
+#    echo "weavedRunning=$weavedRunning"
+    if [ "$weavedRunning" != "" ]; then
+	killall weavedconnectd.pi    
+    fi
+  ;;
+
+    upgrade)
+  ;;
+
+  *)
+    echo "postrm called with unknown argument \`$1'" >&2
+    exit 1
+  ;;
+
+esac
+
+exit 0
+

@@ -1,0 +1,64 @@
+#!/bin/sh
+# postrm script for weavedconnectd
+#
+
+TMP_DIR=/tmp
+
+set -e
+
+case "$1" in
+  purge)
+# remove global startup file
+    if [ -f /usr/bin/weavedstart.sh ]; then
+      rm -f /usr/bin/weavedstart.sh
+    fi
+# remove startup scripts	
+    for file in /usr/bin/Weaved*.sh ; do
+      rm -f $file
+    done
+# remove notification scripts
+    if [ -f /usr/bin/weavednotify.sh ]; then
+      rm -f /usr/bin/weavednotify.sh
+    fi
+    for file in /usr/bin/notify_Weaved*.sh ; do
+      rm -f $file
+    done
+# remove configuration files
+    for file in /etc/weaved/services/Weaved*.conf ; do
+      rm -f $file
+    done
+# remove PID files
+    for file in /var/run/Weaved*.pid ; do
+      rm -f $file
+    done
+# remove installation template files
+    if [ -d /usr/share/weavedconnectd ]; then
+      rm -r /usr/share/weavedconnectd
+    fi
+# remove crontab entry
+    crontab -l | grep -v weavedstart.sh | cat > $TMP_DIR/.crontmp
+    crontab $TMP_DIR/.crontmp
+    echo
+    echo "If you uninstalled Weaved connectd without deleting Device Connections first,"
+    echo "there may be orphaned Device Connections in your Device List.  Use the "
+    echo "'Settings' link in the web portal Device List to delete these."
+  ;;
+
+  remove|failed-upgrade|abort-install|abort-upgrade|disappear)
+    if [ -d /usr/share/weavedconnectd ]; then
+      rm -r /usr/share/weavedconnectd
+    fi
+  ;;
+
+  upgrade)
+    echo "postrm called with upgrade" > /dev/null
+  ;;
+
+  *)
+    echo "postrm called with unknown argument \`$1'" >&2
+    exit 1
+  ;;
+
+esac
+
+exit 0

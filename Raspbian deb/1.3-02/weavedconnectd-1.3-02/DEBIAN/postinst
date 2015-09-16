@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -e
+case "$1" in
+
+    purge|configure|remove|failed-upgrade|abort-install|abort-upgrade|disappear)
+    ;;
+
+    upgrade)
+    if [ -f /usr/bin/startweaved.sh ]; then
+	usr/bin/startweaved.sh    
+    fi
+  ;;
+
+  *)
+    echo "postinst called with unknown argument \`$1'" >&2
+    exit 1
+  ;;
+
+esac
+
+echo
+echo "Run sudo weavedinstaller to add or remove Weaved remote connection services."
+echo
