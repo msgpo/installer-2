@@ -125,7 +125,8 @@ platformDetection()
             PLATFORM=beagle
             SYSLOG=/var/log/syslog
         fi
-    elif [ "$machineType" = "x86_64" ] && [ "$osName" = "Linux" ]; then
+#    elif [ "$machineType" = "x86_64" ] && [ "$osName" = "Linux" ]; then
+    elif [ "$osName" = "Linux" ]; then
         PLATFORM=linux
         if [ "$distributionName" = "debian" ] || [ "$distributionName" = "ubuntu" ]; then
             if [ "$distributionName" = "debian" ]; then
